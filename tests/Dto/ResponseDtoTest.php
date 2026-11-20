@@ -8,7 +8,9 @@ use Dev1\Pey\Dto\Payload;
 use Dev1\Pey\Dto\Response\AmountBreakdown;
 use Dev1\Pey\Dto\Response\BankAccount;
 use Dev1\Pey\Dto\Response\BankAccountRegistration;
+use Dev1\Pey\Dto\Response\CreatedPaymentLink;
 use Dev1\Pey\Dto\Response\PaymentLink;
+use Dev1\Pey\Dto\Response\PushNotification;
 use Dev1\Pey\Dto\Response\QrCode;
 use Dev1\Pey\Dto\Response\Transaction;
 use Dev1\Pey\Dto\Response\TransactionMetadata;
@@ -30,6 +32,8 @@ use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(QrCode::class)]
+#[CoversClass(PushNotification::class)]
+#[CoversClass(CreatedPaymentLink::class)]
 #[CoversClass(BankAccount::class)]
 #[CoversClass(BankAccountRegistration::class)]
 #[CoversClass(PaymentLink::class)]
@@ -170,6 +174,20 @@ final class ResponseDtoTest extends TestCase
         self::assertNull($summary->amountBreakdown);
         self::assertSame('153.50', $summary->amount->toDecimalString());
         self::assertSame([], $summary->metadata->externalMetadata);
+    }
+
+    public function testReplayableResponsesRoundTripThroughToArray(): void
+    {
+        $qr = new QrCode('AB12CD34EF', '{"TYP":1}', 'iVBORw0KGgo=');
+        $qrWithoutImage = new QrCode('AB12CD34EF', '{"TYP":1}');
+        $push = new PushNotification('01M3QR5E7XHXMNZDEPFH3JAWS0', '12345678901234567890');
+        $link = new CreatedPaymentLink('01KRFJJYPMP24MF3EFX1043RNC', 'https://app.mipey.mx/payment-link/01KRFJJYPMP24MF3EFX1043RNC');
+
+        self::assertEquals($qr, QrCode::fromArray($qr->toArray()));
+        self::assertEquals($qrWithoutImage, QrCode::fromArray($qrWithoutImage->toArray()));
+        self::assertEquals($push, PushNotification::fromArray($push->toArray()));
+        self::assertEquals($link, CreatedPaymentLink::fromArray($link->toArray()));
+        self::assertSame(['id' => 'AB12CD34EF', 'qrString' => '{"TYP":1}', 'qrImage' => null], $qrWithoutImage->toArray());
     }
 
     public function testDtosCanBeBuiltDirectlyForTests(): void

@@ -31,4 +31,14 @@ final readonly class PushNotification
 
         return new self($payload->string('transactionId'), $payload->string('codiId'));
     }
+
+    /**
+     * The response fields, in the API's shape. `fromArray(toArray())` round-trips.
+     *
+     * @return array{transactionId: string, codiId: string}
+     */
+    public function toArray(): array
+    {
+        return ['transactionId' => $this->transactionId, 'codiId' => $this->codiId];
+    }
 }

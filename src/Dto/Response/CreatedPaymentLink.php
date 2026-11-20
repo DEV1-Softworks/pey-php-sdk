@@ -31,4 +31,14 @@ final readonly class CreatedPaymentLink
 
         return new self($payload->string('id'), $payload->string('url'));
     }
+
+    /**
+     * The response fields, in the API's shape. `fromArray(toArray())` round-trips.
+     *
+     * @return array{id: string, url: string}
+     */
+    public function toArray(): array
+    {
+        return ['id' => $this->id, 'url' => $this->url];
+    }
 }
