@@ -23,6 +23,7 @@ use Dev1\Pey\PeyClient;
 use Dev1\Pey\Resources\BankAccounts;
 use Dev1\Pey\Resources\Codi;
 use Dev1\Pey\Resources\PaymentLinks;
+use Dev1\Pey\Resources\Transactions;
 use Dev1\Pey\Security\BankAccountGuard;
 use Dev1\Pey\Security\Secret;
 use Dev1\Pey\Tests\Support\Dumps;
@@ -50,6 +51,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Codi::class)]
 #[UsesClass(BankAccounts::class)]
 #[UsesClass(PaymentLinks::class)]
+#[UsesClass(Transactions::class)]
 #[UsesClass(BankAccountGuard::class)]
 #[UsesClass(BankAccountNotAllowedException::class)]
 #[UsesClass(RegisterBankAccountRequest::class)]
@@ -91,6 +93,7 @@ final class PeyClientTest extends TestCase
         self::assertSame($pey->codi(), $pey->codi());
         self::assertSame($pey->bankAccounts(), $pey->bankAccounts());
         self::assertSame($pey->paymentLinks(), $pey->paymentLinks());
+        self::assertSame($pey->transactions(), $pey->transactions());
     }
 
     public function testTheDefaultConfigurationBlocksBankAccountRegistration(): void
