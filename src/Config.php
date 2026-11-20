@@ -6,13 +6,15 @@ namespace Dev1\Pey;
 
 use Dev1\Pey\Exception\ConfigurationException;
 use Dev1\Pey\Security\Secret;
+use Dev1\Pey\Validation\Clabe;
 
 /**
  * SDK configuration.
  *
  * The API key is wrapped in a Secret, so dumping, exporting or serializing a
  * Config never reveals it. TLS certificate verification is always on and cannot
- * be disabled; the base URL must use HTTPS.
+ * be disabled; the base URL must use HTTPS. Bank account registration is
+ * blocked unless the CLABE is in $allowedClabes (see BankAccountGuard).
  */
 final readonly class Config
 {
@@ -36,10 +38,16 @@ final readonly class Config
     private float $timeout;
 
     /**
+     * @var list<string>
+     */
+    private array $allowedClabes;
+
+    /**
      * @param string|Secret $apiKey         the Pey API key; never logged or shown in errors
      * @param string        $baseUrl        HTTPS base URL. Override it only for a Pey environment other than production, if Pey releases one.
      * @param float         $connectTimeout seconds allowed to establish the connection
      * @param float         $timeout        seconds allowed for the whole request
+     * @param list<string>  $allowedClabes  CLABEs this application may register with Pey. Empty (the default) blocks every registration.
      *
      * @throws ConfigurationException
      */
@@ -49,6 +57,7 @@ final readonly class Config
         string $baseUrl = self::DEFAULT_BASE_URL,
         float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
         float $timeout = self::DEFAULT_TIMEOUT,
+        array $allowedClabes = [],
     ) {
         $this->apiKey = self::validateApiKey($apiKey);
         $this->baseUrl = self::normalizeBaseUrl($baseUrl);
@@ -61,6 +70,7 @@ final readonly class Config
 
         $this->connectTimeout = $connectTimeout;
         $this->timeout = $timeout;
+        $this->allowedClabes = self::validateAllowedClabes($allowedClabes);
     }
 
     public function apiKey(): Secret
@@ -84,6 +94,38 @@ final readonly class Config
     public function timeout(): float
     {
         return $this->timeout;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function allowedClabes(): array
+    {
+        return $this->allowedClabes;
+    }
+
+    /**
+     * @param array<array-key, mixed> $clabes
+     *
+     * @return list<string>
+     *
+     * @throws ConfigurationException
+     */
+    private static function validateAllowedClabes(array $clabes): array
+    {
+        $valid = [];
+        foreach ($clabes as $index => $clabe) {
+            if (!\is_string($clabe) || !Clabe::isValid($clabe)) {
+                throw ConfigurationException::because(\sprintf(
+                    'allowedClabes[%s] (%s) must be an 18-digit CLABE with a correct check digit.',
+                    $index,
+                    \is_string($clabe) ? Clabe::mask($clabe) : get_debug_type($clabe),
+                ));
+            }
+            $valid[$clabe] = $clabe;
+        }
+
+        return array_values($valid);
     }
 
     /**

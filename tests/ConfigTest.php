@@ -20,6 +20,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PeyException::class)]
 #[UsesClass(ConfigurationException::class)]
 #[UsesClass(SecretExposureException::class)]
+#[UsesClass(\Dev1\Pey\Validation\Clabe::class)]
 final class ConfigTest extends TestCase
 {
     private const API_KEY = 'pey_test_not_a_real_value';
@@ -32,6 +33,42 @@ final class ConfigTest extends TestCase
         self::assertSame(5.0, $config->connectTimeout());
         self::assertSame(15.0, $config->timeout());
         self::assertSame(self::API_KEY, $config->apiKey()->reveal());
+    }
+
+    public function testNoClabeIsAllowlistedByDefault(): void
+    {
+        self::assertSame([], (new Config(self::API_KEY))->allowedClabes());
+    }
+
+    public function testAllowlistedClabesAreKeptOnceEach(): void
+    {
+        $config = new Config(self::API_KEY, allowedClabes: ['032180000118359719', '002010077777777771', '032180000118359719']);
+
+        self::assertSame(['032180000118359719', '002010077777777771'], $config->allowedClabes());
+    }
+
+    /**
+     * @return iterable<string, array{mixed, string}>
+     */
+    public static function provideInvalidAllowlistEntries(): iterable
+    {
+        yield 'wrong check digit' => ['032180000118359710', '**************9710'];
+        yield 'too short' => ['03218000011835971', '*************5971'];
+        yield 'not a string' => [32180000118359719, 'int'];
+    }
+
+    #[DataProvider('provideInvalidAllowlistEntries')]
+    public function testAllowlistEntriesMustBeValidClabes(mixed $entry, string $shown): void
+    {
+        try {
+            // Through reflection: the input is deliberately outside the declared list<string>,
+            // as it can be when a framework bridge reads untyped configuration.
+            (new \ReflectionClass(Config::class))->newInstanceArgs([self::API_KEY, Config::DEFAULT_BASE_URL, 5.0, 15.0, [$entry]]);
+            self::fail('Expected a ConfigurationException.');
+        } catch (ConfigurationException $e) {
+            self::assertStringContainsString('allowedClabes[0] (' . $shown . ')', $e->getMessage());
+            self::assertStringNotContainsString('0321800001183597', $e->getMessage());
+        }
     }
 
     public function testItAcceptsASecret(): void
