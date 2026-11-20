@@ -71,6 +71,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - verifies before parsing, and returns a `VerifiedWebhook` with the `webhook-id` for deduplication and a typed event.
 - Webhook events: `CodiQrPaymentReceived`, `CodiPushNotificationPaymentReceived`, `PaymentLinkStatusUpdated`, `BankAccountUpdated`, and `UnknownEvent` for types this version does not model.
 - `WebhookVerificationException`, which exposes the failure reason (`VerificationFailure`).
+- `Testing\FakePeyClient`: an in-memory `PeyClientInterface` for your application's tests.
+  - It applies the same validation and `BankAccountGuard` as the real client and raises the same exceptions (404, 409, 400).
+  - It simulates QR, push-notification and payment-link payments and bank account activation; each simulation returns the documented webhook body.
+  - It can inject failures before or after processing, and records every call.
+- `Testing\WebhookSigner`: signs webhook bodies with a test secret, so webhook endpoints can be tested end to end with `WebhookVerifier`.
 
 ### Fixed
 
