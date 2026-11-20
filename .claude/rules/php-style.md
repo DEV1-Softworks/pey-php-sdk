@@ -12,7 +12,8 @@
 
 - Classes are `final` by default. Make one extensible only with a concrete reason.
 - DTOs and value objects are `final readonly class` with promoted constructor properties. Use named constructors (`fromString()`, `fromCentavos()`, `fromArray()`) when construction needs validation or parsing.
-- Closed sets of API values are string-backed `enum`s whose values match the API exactly (for example `PaymentLinkStatus::Pending = 'pending'`, `TransactionStatus::Paid = 'PAID'`).
+- Closed sets of API values are string-backed `enum`s whose values match the API exactly (for example `PaymentLinkStatus::Pending = 'pending'`, `TransactionStatus::Paid = 'PAID'`). Every API enum has `case Unknown = ''` and `fromApi()`, so a value Pey adds later never breaks parsing. Request DTOs reject `Unknown`.
+- Response DTOs use the API's field names for their public properties, so the contract tests compare them 1:1 with the spec. Hydrate them only through `Dto\Payload`, which reports bad fields as `UnexpectedResponseException` with the field path and never the value.
 - Money is never a `float`. Only `Money\Amount` represents money (see `security.md`).
 - Depend on PSR interfaces only: PSR-18 client, PSR-17 factories, PSR-7 messages, PSR-3 logger, PSR-20 clock. Never import a concrete HTTP client (Guzzle, Symfony) at runtime.
 - No global state, singletons or static mutable properties. Inject dependencies through constructors.

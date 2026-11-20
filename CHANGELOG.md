@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `AmountRules`: push notification > 0 and ≤ 1,000,000; payment link > 0
   - `Metadata`: ≤ 50 pairs, keys ≤ 40 characters, scalar values ≤ 500 characters
   - `Text`: Unicode-aware length checks
+- Enums `CodiStatus`, `PaymentLinkStatus`, `TransactionStatus`, `PaymentMethod`, `PayableType` and `Entity`. Each has an `Unknown` case so values Pey adds later never break parsing.
+- Request DTOs that validate every field and report all errors at once: `CreateQrRequest`, `CreatePushNotificationRequest`, `RegisterBankAccountRequest`, `CreatePaymentLinkRequest` and `UpdatePaymentLinkRequest`. Amounts are sent as exact JSON numbers, and metadata always as a JSON object.
+- Response DTOs: `QrCode`, `PushNotification`, `BankAccountRegistration`, `BankAccount`, `CreatedPaymentLink`, `UpdatedPaymentLink`, `PaymentLink`, `Transaction`, `TransactionSummary`, `TransactionPage`, `AmountBreakdown` and `TransactionMetadata`. Amounts are `Amount`, timestamps are UTC `DateTimeImmutable`, and malformed responses raise `UnexpectedResponseException` naming the field.
+- Contract tests against a verbatim snapshot of Pey's `openapi.json` (version `2026-10-20`), covering request schemas, response examples, DTO field names and enum values.
 
 ### Fixed
 
