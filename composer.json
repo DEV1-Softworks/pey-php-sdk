@@ -25,15 +25,28 @@
         }
     ],
     "require": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "php-http/discovery": "^1.20",
+        "psr/http-client": "^1.0",
+        "psr/http-factory": "^1.1",
+        "psr/http-message": "^1.1 || ^2.0",
+        "psr/log": "^2.0 || ^3.0"
     },
     "require-dev": {
         "ext-simplexml": "*",
         "friendsofphp/php-cs-fixer": "^3.95",
+        "guzzlehttp/guzzle": "^7.9",
+        "nyholm/psr7": "^1.8",
         "phpstan/phpstan": "^2.3",
         "phpstan/phpstan-phpunit": "^2.1",
         "phpstan/phpstan-strict-rules": "^2.1",
-        "phpunit/phpunit": "^11.5"
+        "phpunit/phpunit": "^11.5",
+        "symfony/http-client": "^6.4 || ^7.0"
+    },
+    "suggest": {
+        "guzzlehttp/guzzle": "PSR-18 client the SDK configures with exact connect and total timeouts (preferred).",
+        "nyholm/psr7": "PSR-17 factories, if your project has none.",
+        "symfony/http-client": "PSR-18 client the SDK configures with timeouts (no separate connect timeout)."
     },
     "autoload": {
         "psr-4": {
@@ -64,7 +77,9 @@
         "cs:fix": "Fix coding standards (PER-CS) in place."
     },
     "config": {
-        "allow-plugins": {},
+        "allow-plugins": {
+            "php-http/discovery": false
+        },
         "sort-packages": true
     },
     "minimum-stability": "stable",
