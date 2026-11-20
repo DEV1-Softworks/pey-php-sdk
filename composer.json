@@ -1,0 +1,72 @@
+{
+    "name": "dev1/pey-core",
+    "description": "Unofficial PHP SDK for the Pey API (CoDi payments, Mexico). Not affiliated with Pey or Banco de México.",
+    "type": "library",
+    "license": "MIT",
+    "keywords": [
+        "pey",
+        "codi",
+        "banxico",
+        "payments",
+        "mexico",
+        "sdk",
+        "psr-18",
+        "webhooks"
+    ],
+    "homepage": "https://github.com/DEV1-Softworks/pey-sdk",
+    "support": {
+        "issues": "https://github.com/DEV1-Softworks/pey-sdk/issues",
+        "source": "https://github.com/DEV1-Softworks/pey-sdk"
+    },
+    "authors": [
+        {
+            "name": "DEV1 Softworks Labs",
+            "email": "it@dev1.mx"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "ext-simplexml": "*",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.1",
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "Dev1\\Pey\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Dev1\\Pey\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:coverage": [
+            "@putenv XDEBUG_MODE=coverage",
+            "phpunit --coverage-clover build/coverage.xml --coverage-text",
+            "@php tools/coverage-check.php build/coverage.xml"
+        ],
+        "analyse": "phpstan analyse --memory-limit=1G --no-progress",
+        "cs": "php-cs-fixer check --diff",
+        "cs:fix": "php-cs-fixer fix"
+    },
+    "scripts-descriptions": {
+        "test": "Run the PHPUnit test suite.",
+        "test:coverage": "Run the test suite with coverage and enforce the coverage thresholds.",
+        "analyse": "Run PHPStan at level max with strict rules (no baseline).",
+        "cs": "Check coding standards (PER-CS) without modifying files.",
+        "cs:fix": "Fix coding standards (PER-CS) in place."
+    },
+    "config": {
+        "allow-plugins": {},
+        "sort-packages": true
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
