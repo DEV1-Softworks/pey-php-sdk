@@ -33,7 +33,11 @@ Applies to the Pey API key and the webhook secret.
 - The sleeper, random source and clock (`psr/clock`) are injected into `Transport`. Tests never really sleep (`RecordingSleeper`, seeded `Randomizer`, `FrozenClock`).
 - Each retry is logged as a warning with method, path template, reason, delay and attempt number, but never secrets or bodies.
 - Mutating the retry rules (allowing POST in the policy, dropping the method check in `Transport`, retrying 500, ignoring `Retry-After`) fails the suite.
-- A POST that fails with a network error or timeout **after it may have been sent** has an unknown outcome. Surface it as `NetworkException` stating that the request may have been processed. Never retry it or release its idempotency lock automatically.
+- **Every client or transport failure of a POST has an unknown outcome.** PSR-18 cannot prove that a request never left, and clients disagree on what their exception types mean: Guzzle throws `RequestExceptionInterface` for timeouts and broken connections after the request was sent, or after the response started.
+  - `Transport::networkFailure()` sets `requestMayHaveBeenProcessed()` to true for every non-GET failure. It never infers "not sent" from an exception type.
+  - Surface the failure as `NetworkException` stating that the request may have been processed. Never retry it or release its idempotency lock automatically.
+  - Failures the SDK knows happened before sending (an unencodable body, an unfilled path placeholder) are thrown before `sendRequest()` and never reach that point.
+  - Putting an exception-type check back fails the suite (`ClientFailures` covers the PSR-18 fakes and real Guzzle 7 and 8 exceptions).
 
 ## 3. Money is never a float
 
@@ -93,17 +97,16 @@ Throw `Exception\ValidationException` with field-level details (`field => list o
 - **After a failure, release only when Pey certainly did not act**:
   - local `ValidationException`, or a 400 from Pey;
   - `BankAccountNotAllowedException` or `ConfigurationException`;
-  - a 4xx from Pey;
-  - a `NetworkException` whose `requestMayHaveBeenProcessed()` is false.
+  - a 4xx from Pey.
 
-  **Everything else** keeps the key blocked as `unknown`: timeouts, 5xx (503 included), unreadable 2xx bodies, 3xx, and any non-Pey `Throwable`.
+  **Everything else** keeps the key blocked as `unknown`: every `NetworkException` (timeouts, connection errors, and requests the HTTP client rejected, whatever its exception type), 5xx (503 included), unreadable 2xx bodies, 3xx, and any non-Pey `Throwable`. The accepted cost: a POST that the HTTP client rejects locally stays blocked until the application releases it. The SDK builds and validates its requests itself, so this should be rare.
 - **Fail closed**:
   - if `acquire` throws, nothing is sent;
   - if storing the result fails after success, the result is still returned and the key stays `started`, which goes stale and then `unknown`. It never reopens;
   - if releasing fails, the key stays blocked.
 - **The only way to resend a blocked key** is an explicit `release()`, after the application has confirmed with Pey that nothing was created. Releases are logged at `notice`.
 - **Retention** defaults to 7 days. It must outlast every retry horizon (queues, users). `staleAfterSeconds` must be at least 60 and must exceed the HTTP timeout.
-- Mutating any decision (release on timeout, release unexpected errors, treat 5xx or unreadable responses as client errors, skip the fingerprint, ignore `acquire`, skip the unknown or stale checks, accept a corrupt record) fails the suite.
+- Mutating any decision (release on timeout, release after an HTTP client exception of any type, release unexpected errors, treat 5xx or unreadable responses as client errors, skip the fingerprint, ignore `acquire`, skip the unknown or stale checks, accept a corrupt record) fails the suite.
 
 ## 7. Webhooks
 
