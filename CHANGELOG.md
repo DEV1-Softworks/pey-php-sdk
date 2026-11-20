@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-20
+
 ### Added
 
 - Project scaffold: Composer package `dev1/pey-php-sdk`, PHPUnit 11, PHPStan at level max with strict rules (no baseline), PHP-CS-Fixer with PER-CS 3.0, and a coverage gate (90% on `src/`, 100% on `Money/`, `Security/`, `Validation/` and `Webhooks/`).
@@ -85,4 +87,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - API keys and JSON number literals with a trailing line break were accepted, because PCRE's `$` matches before a final newline.
 
-[Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/commits/develop
+[Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/compare/v0.1.0...develop
+[0.1.0]: https://github.com/DEV1-Softworks/pey-php-sdk/releases/tag/v0.1.0
