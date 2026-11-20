@@ -76,6 +76,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - It simulates QR, push-notification and payment-link payments and bank account activation; each simulation returns the documented webhook body.
   - It can inject failures before or after processing, and records every call.
 - `Testing\WebhookSigner`: signs webhook bodies with a test secret, so webhook endpoints can be tested end to end with `WebhookVerifier`.
+- Documentation in `docs/`: getting started, security, webhooks, idempotency, testing, and known gaps (every `TODO(pey-docs)`). It has front matter for Nuxt Content.
+- README quick start: a QR charge, webhook verification, and payment confirmation through `GET /transaction/{id}`.
+- `doctum.php`: Doctum configuration for the API reference.
+- `DocumentationTest`: every PHP example in the README and `docs/` must parse, and every SDK class it imports must exist.
 
 ### Fixed
 
