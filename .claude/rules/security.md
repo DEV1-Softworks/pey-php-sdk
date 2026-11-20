@@ -21,12 +21,18 @@ Applies to the Pey API key and the webhook secret.
 ## 2. Never automatically retry a POST
 
 - Pey has no idempotency keys, so a retried POST can create a duplicate charge, payment link or bank account.
-- Retry **only GET** requests, and only on:
-  - PSR-18 `NetworkExceptionInterface` (connection-level failures),
+- Retry **only GET** requests (`RetryPolicy::allowsMethod()`, also enforced in `Transport::retryDelay()`), and only on:
+  - a transient network failure (`NetworkException::isTransient()`: connection, timeout or stream errors; not a request the client rejected as invalid),
   - HTTP 429,
   - HTTP 503.
-- Use exponential backoff with jitter, and respect `Retry-After` (delta-seconds or HTTP-date) up to a configurable cap. The retry count is configurable and defaults to 2. The sleeper and jitter source are injectable for tests.
-- 500, other 5xx and 4xx are never retried.
+- 500, other 5xx, other 4xx and malformed successes are never retried.
+- The policy is `Config::$retryPolicy` (`RetryPolicy`):
+  - `maxRetries` defaults to 2 and is capped at 10;
+  - waits use exponential backoff with *equal* jitter: half of min(maxDelayMs, baseDelayMs × 2^(n−1)), plus a random amount up to the other half;
+  - `Retry-After` (delta-seconds or IMF-fixdate) replaces the backoff. When it asks for more than `maxDelayMs` (default 10 s), the SDK does not wait: the exception is thrown with `retryAfter()` set.
+- The sleeper, random source and clock (`psr/clock`) are injected into `Transport`. Tests never really sleep (`RecordingSleeper`, seeded `Randomizer`, `FrozenClock`).
+- Each retry is logged as a warning with method, path template, reason, delay and attempt number, but never secrets or bodies.
+- Mutating the retry rules (allowing POST in the policy, dropping the method check in `Transport`, retrying 500, ignoring `Retry-After`) fails the suite.
 - A POST that fails with a network error or timeout **after it may have been sent** has an unknown outcome. Surface it as `NetworkException` stating that the request may have been processed. Never retry it or release its idempotency lock automatically.
 
 ## 3. Money is never a float

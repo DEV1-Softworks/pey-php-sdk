@@ -40,6 +40,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(BankAccountGuard::class)]
 #[UsesClass(BankAccountNotAllowedException::class)]
 #[UsesClass(Config::class)]
+#[UsesClass(\Dev1\Pey\Http\RetryPolicy::class)]
 #[UsesClass(Secret::class)]
 #[UsesClass(Transport::class)]
 #[UsesClass(Json::class)]

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Dev1\Pey\Http;
 
+use Dev1\Pey\Clock\SystemClock;
 use Dev1\Pey\Config;
+use Dev1\Pey\Exception\ApiException;
 use Dev1\Pey\Exception\AuthenticationException;
 use Dev1\Pey\Exception\ConfigurationException;
 use Dev1\Pey\Exception\ConflictException;
@@ -20,6 +22,7 @@ use Dev1\Pey\Exception\ValidationException;
 use Dev1\Pey\Version;
 use Http\Discovery\Exception as DiscoveryException;
 use Http\Discovery\Psr17FactoryDiscovery;
+use Psr\Clock\ClockInterface;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Client\RequestExceptionInterface;
@@ -28,6 +31,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use Random\Randomizer;
 
 /**
  * Sends authenticated JSON requests to Pey and maps responses to arrays or
@@ -41,7 +45,8 @@ use Psr\Log\NullLogger;
  * - request and response bodies are never logged, because they contain CLABEs,
  *   names, phone numbers and metadata.
  *
- * This class sends each request exactly once: it never retries.
+ * Retries follow Config::retryPolicy(): GET requests only, after a transient
+ * network error, HTTP 429 or HTTP 503. A POST is always sent exactly once.
  *
  * @internal
  */
@@ -55,6 +60,9 @@ final class Transport
         private readonly RequestFactoryInterface $requestFactory,
         private readonly StreamFactoryInterface $streamFactory,
         private readonly LoggerInterface $logger = new NullLogger(),
+        private readonly Sleeper $sleeper = new UsleepSleeper(),
+        private readonly Randomizer $random = new Randomizer(),
+        private readonly ClockInterface $clock = new SystemClock(),
     ) {}
 
     /**
@@ -121,6 +129,66 @@ final class Transport
      * @throws PeyException
      */
     private function send(string $method, string $pathTemplate, array $pathParams, array $query, #[\SensitiveParameter] ?array $body): array
+    {
+        $policy = $this->config->retryPolicy();
+
+        for ($retry = 1; ; ++$retry) {
+            try {
+                return $this->sendOnce($method, $pathTemplate, $pathParams, $query, $body);
+            } catch (PeyException $e) {
+                $delay = $this->retryDelay($policy, $method, $retry, $e);
+                if ($delay === null) {
+                    throw $e;
+                }
+
+                $this->logger->warning('Pey API {method} {path} failed ({reason}); retrying in {delay_ms} ms (retry {retry} of {max_retries}).', [
+                    'method' => $method,
+                    'path' => $pathTemplate,
+                    'reason' => $e->httpStatus() !== null ? 'HTTP ' . $e->httpStatus() : 'network error',
+                    'delay_ms' => $delay,
+                    'retry' => $retry,
+                    'max_retries' => $policy->maxRetries,
+                ]);
+                $this->sleeper->sleep($delay);
+            }
+        }
+    }
+
+    /**
+     * The wait before the next attempt, or null when $e must be thrown.
+     */
+    private function retryDelay(RetryPolicy $policy, string $method, int $retry, PeyException $e): ?int
+    {
+        if (!$policy->allowsMethod($method) || $retry > $policy->maxRetries) {
+            return null;
+        }
+
+        $retryable = $e instanceof NetworkException
+            ? $e->isTransient()
+            : $e instanceof ApiException && $policy->isRetryableStatus($e->httpStatus() ?? 0);
+
+        if (!$retryable) {
+            return null;
+        }
+
+        return $policy->delayBeforeRetry(
+            $retry,
+            $e instanceof ApiException ? $e->retryAfter() : null,
+            $this->clock->now(),
+            $this->random,
+        );
+    }
+
+    /**
+     * @param array<string, string>        $pathParams
+     * @param array<string, string>        $query
+     * @param array<array-key, mixed>|null $body
+     *
+     * @return array<array-key, mixed>
+     *
+     * @throws PeyException
+     */
+    private function sendOnce(string $method, string $pathTemplate, array $pathParams, array $query, #[\SensitiveParameter] ?array $body): array
     {
         $uri = $this->config->baseUrl() . self::renderPath($pathTemplate, $pathParams);
         if ($query !== []) {
@@ -251,6 +319,7 @@ final class Transport
             $mayHaveBeenProcessed,
             $causeType,
             $this->sanitizeCauseMessage($cause->getMessage()),
+            !$cause instanceof RequestExceptionInterface,
         );
 
         $this->logger->error('Pey API network error for {method} {path}: {cause}', [

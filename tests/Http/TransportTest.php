@@ -23,12 +23,14 @@ use Dev1\Pey\Http\HeaderRedactor;
 use Dev1\Pey\Http\HttpClientFactory;
 use Dev1\Pey\Http\Json;
 use Dev1\Pey\Http\JsonNumber;
+use Dev1\Pey\Http\RetryPolicy;
 use Dev1\Pey\Http\Transport;
 use Dev1\Pey\Security\Secret;
 use Dev1\Pey\Tests\Support\Dumps;
 use Dev1\Pey\Tests\Support\FakePsr18Exceptions;
 use Dev1\Pey\Tests\Support\MockHttpClient;
 use Dev1\Pey\Tests\Support\RecordingLogger;
+use Dev1\Pey\Tests\Support\RecordingSleeper;
 use Dev1\Pey\Version;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Request;
@@ -47,6 +49,7 @@ use Psr\Http\Message\StreamInterface;
 #[UsesClass(ApiError::class)]
 #[UsesClass(HeaderRedactor::class)]
 #[UsesClass(HttpClientFactory::class)]
+#[UsesClass(RetryPolicy::class)]
 #[UsesClass(PeyException::class)]
 #[UsesClass(ApiException::class)]
 #[UsesClass(ValidationException::class)]
@@ -69,7 +72,8 @@ final class TransportTest extends TestCase
         $this->client = new MockHttpClient();
         $this->logger = new RecordingLogger();
         $factory = new Psr17Factory();
-        $this->transport = new Transport(new Config(self::API_KEY), $this->client, $factory, $factory, $this->logger);
+        // Single-attempt behavior; retries are covered by TransportRetryTest.
+        $this->transport = new Transport(new Config(self::API_KEY, retryPolicy: RetryPolicy::disabled()), $this->client, $factory, $factory, $this->logger, new RecordingSleeper());
     }
 
     public function testGetSendsAnAuthenticatedJsonRequest(): void

@@ -52,6 +52,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - the matching `all*()` generators walk every page lazily.
 - `Pagination\Paginator`: lazy `nextToken` pagination that stops with `UnexpectedResponseException` if Pey repeats a cursor.
 - `Validation\OpaqueId` for identifiers with undocumented formats (CoDi QR ids, cursors).
+- Automatic retries for **GET requests only**, on transient network errors, 429 and 503:
+  - configured with `Config::$retryPolicy` (`RetryPolicy`: 2 retries by default, capped at 10);
+  - exponential backoff with equal jitter, and `Retry-After` respected up to `maxDelayMs`;
+  - POST requests are never retried.
+- `Clock\SystemClock` (PSR-20, UTC) and the `psr/clock` dependency.
+- `NetworkException::isTransient()`.
 
 ### Fixed
 
