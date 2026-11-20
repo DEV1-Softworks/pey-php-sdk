@@ -38,4 +38,13 @@ final class UnexpectedResponseException extends PeyException
     {
         return new self(\sprintf('Unexpected Pey response: %s field "%s" must be %s.', $resource, $path, $expected));
     }
+
+    /**
+     * Pey returned a pagination cursor it had already returned. Paging stops
+     * here, because following the cursor again would loop forever.
+     */
+    public static function repeatedCursor(): self
+    {
+        return new self('Unexpected Pey response: a pagination cursor (nextToken) was repeated; stopping to avoid an infinite loop.');
+    }
 }

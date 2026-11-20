@@ -161,6 +161,11 @@ final class ExceptionHierarchyTest extends TestCase
         self::assertNull($e->apiError());
     }
 
+    public function testARepeatedCursorIsAnUnexpectedResponse(): void
+    {
+        self::assertStringContainsString('stopping to avoid an infinite loop', UnexpectedResponseException::repeatedCursor()->getMessage());
+    }
+
     public function testInvalidResponseFieldsAreNamedButNotEchoed(): void
     {
         $e = UnexpectedResponseException::invalidField('Transaction', 'items[0].amount', 'a decimal amount');
