@@ -25,6 +25,7 @@
 
 - Use native types everywhere. Add PHPDoc only for what native types cannot say: array shapes, `list<T>`, generics, `@throws`.
 - Decode API payloads into `array<string, mixed>` and narrow them explicitly (`is_string`, `is_int`, …) before building DTOs. Do not cast blindly.
+- Anchor validation regexes as `'/^…$/D'`. Without the `D` modifier, `$` also matches before a trailing newline, so `"123\n"` would pass `/^\d+$/`. Every validator has a "trailing line break" test case.
 - PHPStan runs at level max with strict rules and **no baseline**. Do not add `@phpstan-ignore` or inline `@var` overrides to silence an error; fix the types. If a suppression is truly unavoidable (for example a bug in a third-party stub), add an inline `@phpstan-ignore <identifier>` with a comment explaining why, and point it out in the PR.
 
 ## Formatting
