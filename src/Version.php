@@ -12,7 +12,7 @@ namespace Dev1\Pey;
  */
 final class Version
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.1.1';
 
     /**
      * Sent as the User-Agent header so Pey can identify traffic from this SDK.

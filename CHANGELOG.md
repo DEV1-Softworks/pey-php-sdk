@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-11-20
+
+### Fixed
+
+- A POST whose HTTP client threw a PSR-18 `RequestExceptionInterface` was reported as never sent (`NetworkException::requestMayHaveBeenProcessed()` returned `false`), although Guzzle uses that interface for failures that happen after the request was sent. Every client or transport failure of a POST is now reported as possibly processed. Impact: `IdempotentRequests` could release an idempotency key after a POST that Pey may have processed, so a retry with the same key could duplicate the charge.
+
+### Changed
+
+- A POST that the HTTP client rejects locally now keeps its idempotency key blocked until the application releases it.
+- CI tests PHP 8.2–8.5 against both Guzzle 7 and Guzzle 8.
+
 ## [0.1.0] - 2026-11-20
 
 ### Added
@@ -87,5 +98,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - API keys and JSON number literals with a trailing line break were accepted, because PCRE's `$` matches before a final newline.
 
-[Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/compare/v0.1.0...develop
+[Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/compare/v0.1.1...develop
+[0.1.1]: https://github.com/DEV1-Softworks/pey-php-sdk/releases/tag/v0.1.1
 [0.1.0]: https://github.com/DEV1-Softworks/pey-php-sdk/releases/tag/v0.1.0
