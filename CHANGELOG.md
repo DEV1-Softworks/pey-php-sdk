@@ -26,5 +26,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ServerException` (5xx) and `ServiceUnavailableException` (503)
   - `NetworkException`, which says whether a failed POST may have been processed
   - `UnexpectedResponseException`, `ConfigurationException` and `SecretExposureException`
+- `Money\Amount`: MXN amounts as integer centavos, built only from decimal strings or integer centavos, never negative. Extra decimals round half-up like Pey, and amounts serialize with two decimals.
+- Local validators in `Validation\`, collecting field-level errors in `Violations`:
+  - `Clabe`: 18 digits and Banco de México check digit
+  - `Ulid`
+  - `NumRef`: 1–7 digits
+  - `PhoneNumber`: 10 digits
+  - `Url`: HTTPS redirect URLs
+  - `Expiration`: QR 0 or ≥ 360 s; push notification ≥ 360 s
+  - `AmountRules`: push notification > 0 and ≤ 1,000,000; payment link > 0
+  - `Metadata`: ≤ 50 pairs, keys ≤ 40 characters, scalar values ≤ 500 characters
+  - `Text`: Unicode-aware length checks
+
+### Fixed
+
+- API keys and JSON number literals with a trailing line break were accepted, because PCRE's `$` matches before a final newline.
 
 [Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/commits/develop
