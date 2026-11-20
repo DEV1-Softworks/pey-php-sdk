@@ -198,6 +198,8 @@ final class ExceptionHierarchyTest extends TestCase
         self::assertSame('/codi/qr', $sent->pathTemplate());
         self::assertTrue($sent->requestMayHaveBeenProcessed());
         self::assertFalse($notSent->requestMayHaveBeenProcessed());
+        self::assertTrue($sent->isTransient());
+        self::assertFalse(NetworkException::create('GET', '/x', false, 'X', 'invalid', transient: false)->isTransient());
         self::assertNull($sent->httpStatus());
     }
 

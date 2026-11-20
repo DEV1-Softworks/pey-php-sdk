@@ -20,12 +20,14 @@ final class NetworkException extends PeyException
         private readonly string $pathTemplate,
         private readonly bool $requestMayHaveBeenProcessed,
         private readonly string $causeClass,
+        private readonly bool $transient,
     ) {
         parent::__construct($message);
     }
 
     /**
      * @param string $causeMessage already sanitized: no secrets, no line breaks
+     * @param bool   $transient    false when the HTTP client rejected the request as invalid, so trying again cannot help
      */
     public static function create(
         string $method,
@@ -33,6 +35,7 @@ final class NetworkException extends PeyException
         bool $requestMayHaveBeenProcessed,
         string $causeClass,
         string $causeMessage,
+        bool $transient = true,
     ): self {
         $message = \sprintf('Network error during %s %s: %s', $method, $pathTemplate, $causeMessage !== '' ? $causeMessage : $causeClass);
 
@@ -40,7 +43,7 @@ final class NetworkException extends PeyException
             $message .= ' Pey may have processed this request. Check the resource\'s state before trying again; never resend it blindly.';
         }
 
-        return new self($message, $method, $pathTemplate, $requestMayHaveBeenProcessed, $causeClass);
+        return new self($message, $method, $pathTemplate, $requestMayHaveBeenProcessed, $causeClass, $transient);
     }
 
     public function method(): string
@@ -61,6 +64,16 @@ final class NetworkException extends PeyException
     public function requestMayHaveBeenProcessed(): bool
     {
         return $this->requestMayHaveBeenProcessed;
+    }
+
+    /**
+     * True for connection, timeout and stream failures; false when the HTTP
+     * client rejected the request itself as invalid. Only transient failures of
+     * GET requests are retried.
+     */
+    public function isTransient(): bool
+    {
+        return $this->transient;
     }
 
     /**
