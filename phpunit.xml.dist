@@ -34,5 +34,7 @@
     <php>
         <ini name="error_reporting" value="-1"/>
         <ini name="display_errors" value="1"/>
+        <!-- Worst case for secret leaks: traces include function arguments. -->
+        <ini name="zend.exception_ignore_args" value="0"/>
     </php>
 </phpunit>
