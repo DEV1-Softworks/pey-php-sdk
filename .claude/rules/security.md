@@ -1,0 +1,96 @@
+# Security rules (non-negotiable)
+
+The Pey API is production only. A single API key can create charges and register the bank accounts that receive money. Every rule below exists because breaking it costs real money or leaks a credential. None of them may be relaxed without explicit maintainer approval.
+
+## 1. Secrets never leak
+
+Applies to the Pey API key and the webhook secret.
+
+- Mark every parameter that receives a secret (constructors, factories, setters, closures) with `#[\SensitiveParameter]`, so stack traces show `SensitiveParameterValue` instead of the value.
+- Objects that hold a secret must:
+  - implement `__debugInfo()` with the secret redacted (this covers `var_dump` and `print_r`);
+  - refuse serialization: `__serialize()` throws, and `__unserialize()` throws too;
+  - not be `JsonSerializable` in a way that exposes the secret;
+  - survive `var_export()`. It **ignores `__debugInfo()`** and prints private properties, so never keep a secret as a plain string property of an object that can be exported. Hold it in a dedicated wrapper that cannot be exported meaningfully (the mechanism is decided and tested in `transport-and-errors`).
+- Never store a `StandardWebhooks\Webhook` instance as a property. It keeps the decoded secret in a plain private property, which `var_export` and `serialize` expose. Create it inside the method that verifies and let it go out of scope.
+- Exceptions never include the secret, request headers, or raw request bodies in their message or context. `PeyException` subclasses carry the method, a path template, the status code, Pey's `error.type` and `requestId`, and nothing more.
+- Logging uses PSR-3. A logged request shows `Authorization: Bearer [REDACTED]`. Request and response bodies are not logged by default, because they contain CLABEs, names, phone numbers and metadata.
+- Tests prove all of the above (see `testing.md`, "Mandatory security tests").
+
+## 2. Never automatically retry a POST
+
+- Pey has no idempotency keys, so a retried POST can create a duplicate charge, payment link or bank account.
+- Retry **only GET** requests, and only on:
+  - PSR-18 `NetworkExceptionInterface` (connection-level failures),
+  - HTTP 429,
+  - HTTP 503.
+- Use exponential backoff with jitter, and respect `Retry-After` (delta-seconds or HTTP-date) up to a configurable cap. The retry count is configurable and defaults to 2. The sleeper and jitter source are injectable for tests.
+- 500, other 5xx and 4xx are never retried.
+- A POST that fails with a network error or timeout **after it may have been sent** has an unknown outcome. Surface it as `NetworkException` stating that the request may have been processed. Never retry it or release its idempotency lock automatically.
+
+## 3. Money is never a float
+
+- `Money\Amount` stores integer centavos. It is built from `string` (`'150.00'`, `'150'`, `'0.5'`) or `int` centavos only. No public method accepts or returns `float`.
+- Decimal strings are parsed strictly: no exponent notation, no thousands separators, no signs other than an optional leading `-` (which is then rejected). Extra decimals round **half-up** to centavos, matching Pey.
+- `Amount` serializes as a decimal with exactly 2 places (`150.00`).
+- The API types amounts as JSON **numbers**, in both directions. The JSON layer must write the number from the decimal string without going through `float`, and must read numbers from responses without float arithmetic.
+- Limits depend on the endpoint and are validated by the request DTOs:
+  - CoDi QR: amount ≥ 0 (0 lets the payer enter the amount)
+  - Push notification: amount > 0 and ≤ 1,000,000
+  - Payment link create and update: amount > 0
+
+## 4. Validate locally before sending
+
+Throw `Exception\ValidationException` with field-level details (`field => list of messages`) before any HTTP call:
+
+- `clabe`: exactly 18 digits with a valid check digit (weights 3, 7, 1 over the first 17 digits; check = (10 − Σ(dᵢ·wᵢ mod 10) mod 10) mod 10).
+- ULIDs (`bankAccountId`, `paymentLinkId`, transaction ids): 26 characters of Crockford base32. CoDi QR ids are Banxico IDCs, **not** ULIDs; validate them only as non-empty.
+- `numRef`: 1–7 digits, sent as a string.
+- `phoneNumber` (push notifications): exactly 10 digits.
+- `metadata`: at most 50 pairs; keys at most 40 characters; values must be scalar (string, int, float, bool) or null, and at most 500 characters once stringified; no nested arrays or objects. Pey returns every value as a string.
+- `successUrl` and `backUrl`: absolute `https://` URLs.
+- Expiration:
+  - QR: `0` (no expiration) or ≥ 360 seconds.
+  - Push notification: ≥ 360 seconds (default 360).
+- Bank account `alias` and `name`: 1–255 characters. `entity` must be one of the `Entity` enum cases.
+- Payment link `clientReferenceId`: at most 255 characters.
+
+## 5. BankAccountGuard is the default
+
+- Registering a CLABE redirects incoming money, so registration requires an explicit allowlist of CLABEs in `Config`.
+- An **empty allowlist blocks all registrations**. CLABEs are compared as normalized 18-digit strings.
+- A blocked registration throws before any HTTP request is built, and the exception names the masked CLABE only (last 4 digits).
+- There is no implicit way around the guard. Pey's own tutorial suggests registering a third-party CLABE for testing; our docs must never repeat that advice.
+
+## 6. Idempotency helper for POSTs
+
+- The `IdempotencyStore` interface has `acquire`, `release` and `remember`; exact signatures are settled in the `idempotency` PR. An in-memory implementation is for tests. Framework bridges provide real stores (for example Laravel cache locks).
+- Keys:
+  - payment links: `clientReferenceId`
+  - QR and push notifications: a caller-supplied local key
+- Flow: `acquire` → send → `remember` the response.
+  - `release` only when the request definitely did not reach Pey (local validation failure, guard rejection, connection refused before sending).
+  - When the outcome is unknown, keep the key locked and surface the error.
+- Pey does not document server-side deduplication by `clientReferenceId` and has no lookup by it. This helper is the only protection.
+
+## 7. Webhooks
+
+- Verify with the official Standard Webhooks PHP library (`standard-webhooks/standard-webhooks`). **Never hand-roll HMAC.**
+- Verify the raw body exactly as received (no re-encoding) and match header names case-insensitively.
+- Timestamp tolerance defaults to 5 minutes, is configurable, and is measured with `psr/clock`. The library hard-codes ±5 minutes against `time()`, so the timestamp check is ours and the signature computation is the library's. The design is reviewed in the `webhooks` PR.
+- Expose `webhook-id` so consumers can deduplicate. It is Pey's documented idempotency key for deliveries.
+- Build typed events **only** from the verified raw body. Never parse an unverified body.
+- Document for consumers:
+  - Confirm a payment with `GET /transaction/{id}` before fulfilling: `status` must be `PAID`, and `amountBreakdown.base`, `payableType` and `payableId` must match the order. `amount` includes tip and fee.
+  - A QR without expiration can be paid many times, so fulfil per `transactionId`.
+
+## 8. Transport defaults
+
+- Timeouts default to 5 s connect and 15 s total, and both are configurable. PSR-18 has no timeout API, so the transport builds known clients with these options when it discovers them. A user-supplied client is the user's responsibility, and the docs say so.
+- TLS verification is always on. There is **no** option to disable it. The base URL must be `https://`.
+
+## 9. No secrets in the repository
+
+- `.env*` is gitignored, and so is `CLAUDE.local.md`.
+- gitleaks scans the full git history in CI.
+- Test fixtures use obviously fake credentials only.
