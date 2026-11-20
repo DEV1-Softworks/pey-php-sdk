@@ -19,7 +19,7 @@ Parameters that receive secrets are marked `#[\SensitiveParameter]`, so stack tr
 
 Pey has no idempotency keys, so retrying a POST could create a second charge. The SDK **never retries POST requests**. GET requests are retried after network errors, 429 and 503, with exponential backoff and jitter, respecting `Retry-After` (see `Config::$retryPolicy`).
 
-When a POST fails without a response, `NetworkException::requestMayHaveBeenProcessed()` tells you whether the charge may exist. Treat that case as "unknown", not as "failed".
+When a POST fails without a response, the charge may exist. An HTTP client cannot prove that a failed request never reached Pey, whatever exception it throws, so for a POST `NetworkException::requestMayHaveBeenProcessed()` is always true. Treat that case as "unknown", not as "failed".
 
 ### Money is exact
 

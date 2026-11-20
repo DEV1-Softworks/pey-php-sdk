@@ -22,7 +22,7 @@ use Symfony\Component\HttpClient\Psr18Client as SymfonyPsr18Client;
  * with the configured timeouts, redirects disabled (the API key must never
  * follow a redirect) and TLS verification on:
  *
- * 1. Guzzle 7: exact connect and total timeouts.
+ * 1. Guzzle (7 or 8): exact connect and total timeouts.
  * 2. Symfony HttpClient: it has no separate connect timeout, so the connect
  *    phase is bounded by the total timeout. Its idle timeout is also set to the
  *    total, because a shorter one would abort slow responses mid-request and
