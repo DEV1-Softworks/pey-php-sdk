@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Contract tests against a verbatim snapshot of Pey's `openapi.json` (version `2026-10-20`), covering request schemas, response examples, DTO field names and enum values.
 - `PeyClient::create()` and `PeyClientInterface`: the entry point, with HTTP components discovered when not given.
 - `$pey->codi()->createQr()` and `->createPushNotification()`: CoDi QR codes and push notifications. They are never retried automatically.
+- `$pey->bankAccounts()->register()` and `->get()`. Registration goes through `Security\BankAccountGuard`: only CLABEs listed in the new `Config::$allowedClabes` can be registered, and an empty list (the default) blocks every registration before anything is sent (`BankAccountNotAllowedException`, which shows a masked CLABE).
+- `Validation\Clabe::mask()`, which shows only the last 4 digits.
 
 ### Fixed
 

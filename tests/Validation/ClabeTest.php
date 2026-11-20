@@ -125,6 +125,23 @@ final class ClabeTest extends TestCase
     }
 
     /**
+     * @return iterable<string, array{string, string}>
+     */
+    public static function provideMasks(): iterable
+    {
+        yield 'CLABE' => ['012180001234567899', '**************7899'];
+        yield 'five characters' => ['12345', '*2345'];
+        yield 'four characters' => ['1234', '****'];
+        yield 'empty' => ['', ''];
+    }
+
+    #[DataProvider('provideMasks')]
+    public function testMaskKeepsOnlyTheLastFourDigits(string $clabe, string $masked): void
+    {
+        self::assertSame($masked, Clabe::mask($clabe));
+    }
+
+    /**
      * @return iterable<string, array{string}>
      */
     public static function provideInvalidCheckDigitInputs(): iterable

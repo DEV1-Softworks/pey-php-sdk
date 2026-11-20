@@ -58,10 +58,14 @@ Throw `Exception\ValidationException` with field-level details (`field => list o
 
 ## 5. BankAccountGuard is the default
 
-- Registering a CLABE redirects incoming money, so registration requires an explicit allowlist of CLABEs in `Config`.
-- An **empty allowlist blocks all registrations**. CLABEs are compared as normalized 18-digit strings.
-- A blocked registration throws before any HTTP request is built, and the exception names the masked CLABE only (last 4 digits).
-- There is no implicit way around the guard. Pey's own tutorial suggests registering a third-party CLABE for testing; our docs must never repeat that advice.
+- Registering a CLABE redirects incoming money, so registration requires an explicit allowlist: `Config::$allowedClabes`.
+- An **empty allowlist (the default) blocks all registrations**. Allowlist entries must be valid 18-digit CLABEs with correct check digits; invalid entries are a `ConfigurationException`. CLABEs are compared exactly, with no trimming.
+- `BankAccounts::register()` calls `BankAccountGuard::assertAllowed()` **before any HTTP request is built**. A blocked attempt:
+  - throws `BankAccountNotAllowedException`, which carries the masked CLABE only (last 4 digits);
+  - is logged as a PSR-3 warning with the masked CLABE.
+- CLABE parameters of the guard and of `register()` are `#[\SensitiveParameter]`, so full account numbers (personal data) stay out of traces.
+- There is **no** switch to disable the guard: to register a CLABE, allowlist it. Pey's own tutorial suggests registering a third-party CLABE for testing; our docs must never repeat that advice.
+- Tests prove that a blocked registration sends zero requests. Mutating the guard (allow-on-empty, skipping the check, dropping `#[\SensitiveParameter]`) fails the suite.
 
 ## 6. Idempotency helper for POSTs
 

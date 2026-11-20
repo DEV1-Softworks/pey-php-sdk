@@ -6,6 +6,7 @@ namespace Dev1\Pey\Tests\Exception;
 
 use Dev1\Pey\Exception\ApiException;
 use Dev1\Pey\Exception\AuthenticationException;
+use Dev1\Pey\Exception\BankAccountNotAllowedException;
 use Dev1\Pey\Exception\ConfigurationException;
 use Dev1\Pey\Exception\ConflictException;
 use Dev1\Pey\Exception\ForbiddenException;
@@ -42,6 +43,7 @@ final class ExceptionHierarchyTest extends TestCase
         foreach ([
             ApiException::class,
             AuthenticationException::class,
+            BankAccountNotAllowedException::class,
             ConfigurationException::class,
             ConflictException::class,
             ForbiddenException::class,

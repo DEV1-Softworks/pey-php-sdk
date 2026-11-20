@@ -7,7 +7,10 @@ namespace Dev1\Pey\Tests;
 use Dev1\Pey\Config;
 use Dev1\Pey\Dto\Payload;
 use Dev1\Pey\Dto\Request\CreateQrRequest;
+use Dev1\Pey\Dto\Request\RegisterBankAccountRequest;
 use Dev1\Pey\Dto\Response\QrCode;
+use Dev1\Pey\Enum\Entity;
+use Dev1\Pey\Exception\BankAccountNotAllowedException;
 use Dev1\Pey\Exception\PeyException;
 use Dev1\Pey\Exception\SecretExposureException;
 use Dev1\Pey\Http\HeaderRedactor;
@@ -17,12 +20,16 @@ use Dev1\Pey\Http\JsonNumber;
 use Dev1\Pey\Http\Transport;
 use Dev1\Pey\Money\Amount;
 use Dev1\Pey\PeyClient;
+use Dev1\Pey\Resources\BankAccounts;
 use Dev1\Pey\Resources\Codi;
+use Dev1\Pey\Security\BankAccountGuard;
 use Dev1\Pey\Security\Secret;
 use Dev1\Pey\Tests\Support\Dumps;
 use Dev1\Pey\Tests\Support\MockHttpClient;
 use Dev1\Pey\Tests\Support\RecordingLogger;
+use Dev1\Pey\Validation\Clabe;
 use Dev1\Pey\Validation\Metadata;
+use Dev1\Pey\Validation\Text;
 use Dev1\Pey\Validation\Violations;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -40,6 +47,13 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(Payload::class)]
 #[UsesClass(Amount::class)]
 #[UsesClass(Codi::class)]
+#[UsesClass(BankAccounts::class)]
+#[UsesClass(BankAccountGuard::class)]
+#[UsesClass(BankAccountNotAllowedException::class)]
+#[UsesClass(RegisterBankAccountRequest::class)]
+#[UsesClass(Entity::class)]
+#[UsesClass(Clabe::class)]
+#[UsesClass(Text::class)]
 #[UsesClass(CreateQrRequest::class)]
 #[UsesClass(QrCode::class)]
 #[UsesClass(Metadata::class)]
@@ -73,6 +87,23 @@ final class PeyClientTest extends TestCase
         $pey = PeyClient::create(new Config(self::API_KEY), new MockHttpClient());
 
         self::assertSame($pey->codi(), $pey->codi());
+        self::assertSame($pey->bankAccounts(), $pey->bankAccounts());
+    }
+
+    public function testTheDefaultConfigurationBlocksBankAccountRegistration(): void
+    {
+        $http = new MockHttpClient();
+        $logger = new RecordingLogger();
+        $pey = PeyClient::create(new Config(self::API_KEY), $http, $logger);
+
+        try {
+            $pey->bankAccounts()->register(new RegisterBankAccountRequest('BBVA', 'Pagos con Pey S.A. de C.V.', '012180001234567899', Entity::Business));
+            self::fail('Expected a BankAccountNotAllowedException.');
+        } catch (BankAccountNotAllowedException) {
+        }
+
+        self::assertSame([], $http->requests);
+        self::assertCount(1, $logger->recordsAt('warning'), 'The blocked attempt is logged through the configured logger.');
     }
 
     /**

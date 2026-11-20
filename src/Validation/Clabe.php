@@ -41,6 +41,17 @@ final class Clabe
     }
 
     /**
+     * Masks all but the last 4 characters, for messages and logs:
+     * `012180001234567899` becomes `**************7899`.
+     */
+    public static function mask(string $clabe): string
+    {
+        $length = \strlen($clabe);
+
+        return $length <= 4 ? str_repeat('*', $length) : str_repeat('*', $length - 4) . substr($clabe, -4);
+    }
+
+    /**
      * Computes the check digit for the first 17 digits of a CLABE.
      *
      * @throws ValidationException when $first17Digits is not exactly 17 digits

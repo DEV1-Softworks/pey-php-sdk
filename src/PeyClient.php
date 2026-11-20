@@ -6,12 +6,16 @@ namespace Dev1\Pey;
 
 use Dev1\Pey\Exception\ConfigurationException;
 use Dev1\Pey\Http\Transport;
+use Dev1\Pey\Resources\BankAccounts;
+use Dev1\Pey\Resources\BankAccountsInterface;
 use Dev1\Pey\Resources\Codi;
 use Dev1\Pey\Resources\CodiInterface;
+use Dev1\Pey\Security\BankAccountGuard;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 /**
  * Client for the Pey API. This is an unofficial SDK, not affiliated with Pey
@@ -28,12 +32,15 @@ final class PeyClient implements PeyClientInterface
 {
     private readonly Codi $codi;
 
+    private readonly BankAccounts $bankAccounts;
+
     /**
      * @internal use PeyClient::create()
      */
-    public function __construct(Transport $transport)
+    public function __construct(Transport $transport, BankAccountGuard $guard, LoggerInterface $logger = new NullLogger())
     {
         $this->codi = new Codi($transport);
+        $this->bankAccounts = new BankAccounts($transport, $guard, $logger);
     }
 
     /**
@@ -52,11 +59,22 @@ final class PeyClient implements PeyClientInterface
         ?RequestFactoryInterface $requestFactory = null,
         ?StreamFactoryInterface $streamFactory = null,
     ): self {
-        return new self(Transport::create($config, $httpClient, $logger, $requestFactory, $streamFactory));
+        $logger ??= new NullLogger();
+
+        return new self(
+            Transport::create($config, $httpClient, $logger, $requestFactory, $streamFactory),
+            BankAccountGuard::fromConfig($config),
+            $logger,
+        );
     }
 
     public function codi(): CodiInterface
     {
         return $this->codi;
+    }
+
+    public function bankAccounts(): BankAccountsInterface
+    {
+        return $this->bankAccounts;
     }
 }
