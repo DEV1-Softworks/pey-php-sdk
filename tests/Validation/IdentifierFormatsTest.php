@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dev1\Pey\Tests\Validation;
 
 use Dev1\Pey\Validation\NumRef;
+use Dev1\Pey\Validation\OpaqueId;
 use Dev1\Pey\Validation\PhoneNumber;
 use Dev1\Pey\Validation\Ulid;
 use Dev1\Pey\Validation\Violations;
@@ -16,6 +17,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(Ulid::class)]
 #[CoversClass(NumRef::class)]
 #[CoversClass(PhoneNumber::class)]
+#[CoversClass(OpaqueId::class)]
 #[UsesClass(Violations::class)]
 final class IdentifierFormatsTest extends TestCase
 {
@@ -116,5 +118,40 @@ final class IdentifierFormatsTest extends TestCase
             $valid ? [] : ['phoneNumber' => ['must be exactly 10 digits, without country code or separators.']],
             $violations->all(),
         );
+    }
+
+    /**
+     * @return iterable<string, array{string, int, bool}>
+     */
+    public static function provideOpaqueIds(): iterable
+    {
+        yield 'IDC from the docs' => ['AB12CD34EF', 255, true];
+        yield 'lower-case IDC' => ['35a13c183a', 255, true];
+        yield 'base64 cursor' => ['eyJQSyI6ICJUWE4j+/=', 4096, true];
+        yield 'at the maximum length' => [str_repeat('A', 255), 255, true];
+        yield 'over the maximum length' => [str_repeat('A', 256), 255, false];
+        yield 'empty' => ['', 255, false];
+        yield 'space' => ['AB12 CD34', 255, false];
+        yield 'trailing line break' => ["AB12CD34EF\n", 255, false];
+        yield 'non-ASCII' => ['ÁB12', 255, false];
+    }
+
+    #[DataProvider('provideOpaqueIds')]
+    public function testOpaqueIds(string $value, int $maxLength, bool $valid): void
+    {
+        self::assertSame($valid, OpaqueId::isValid($value, $maxLength));
+
+        $violations = new Violations();
+        OpaqueId::check($value, 'codiQrId', $violations, $maxLength);
+        self::assertSame(
+            $valid ? [] : ['codiQrId' => [\sprintf('must be 1 to %d printable characters without spaces.', $maxLength)]],
+            $violations->all(),
+        );
+    }
+
+    public function testOpaqueIdsHaveAGenerousDefaultMaximum(): void
+    {
+        self::assertTrue(OpaqueId::isValid(str_repeat('A', 4096)));
+        self::assertFalse(OpaqueId::isValid(str_repeat('A', 4097)));
     }
 }
