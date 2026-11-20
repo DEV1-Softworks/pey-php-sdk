@@ -73,16 +73,37 @@ Throw `Exception\ValidationException` with field-level details (`field => list o
 - There is **no** switch to disable the guard: to register a CLABE, allowlist it. Pey's own tutorial suggests registering a third-party CLABE for testing; our docs must never repeat that advice.
 - Tests prove that a blocked registration sends zero requests. Mutating the guard (allow-on-empty, skipping the check, dropping `#[\SensitiveParameter]`) fails the suite.
 
-## 6. Idempotency helper for POSTs
+## 6. Idempotency for charge-creating POSTs
 
-- The `IdempotencyStore` interface has `acquire`, `release` and `remember`; exact signatures are settled in the `idempotency` PR. An in-memory implementation is for tests. Framework bridges provide real stores (for example Laravel cache locks).
-- Keys:
-  - payment links: `clientReferenceId`
-  - QR and push notifications: a caller-supplied local key
-- Flow: `acquire` → send → `remember` the response.
-  - `release` only when the request definitely did not reach Pey (local validation failure, guard rejection, connection refused before sending).
-  - When the outcome is unknown, keep the key locked and surface the error.
-- Pey does not document server-side deduplication by `clientReferenceId` and has no lookup by it. This helper is the only protection.
+`Idempotency\IdempotentRequests` guarantees that, per key, Pey is called **at most once** for `createQr`, `createPushNotification` and `createPaymentLink`. A repeat with the same parameters replays the stored result without calling Pey.
+
+- **Keys**:
+  - QR and push notifications take a caller-supplied key, 1–255 characters;
+  - payment links use `clientReferenceId`, which is therefore required;
+  - each `Operation` has its own namespace, and keys are stored and logged only as SHA-256 hashes.
+- **Store contract** (`IdempotencyStore`: `acquire`, `remember`, `release`, `recall`):
+  - `acquire` MUST be atomic across processes (Redis `SET NX EX`, Laravel `Cache::add`), and records must not be evicted early;
+  - `InMemoryIdempotencyStore` is for tests and single processes only. Bridges provide real stores.
+- **Records** are versioned JSON holding a state (`started`, `completed` or `unknown`), the start time and a **fingerprint**: SHA-256 of the operation plus the canonical body, with object keys sorted.
+- **When the key is already taken:**
+  - **different fingerprint** → `IdempotencyKeyReusedException`: never replay another charge's result;
+  - **completed** → replay;
+  - **started**, younger than `staleAfterSeconds` (default 300) → `IdempotencyInProgressException`;
+  - **started but stale, or unknown, or unreadable** → `IdempotencyOutcomeUnknownException`.
+- **After a failure, release only when Pey certainly did not act**:
+  - local `ValidationException`, or a 400 from Pey;
+  - `BankAccountNotAllowedException` or `ConfigurationException`;
+  - a 4xx from Pey;
+  - a `NetworkException` whose `requestMayHaveBeenProcessed()` is false.
+
+  **Everything else** keeps the key blocked as `unknown`: timeouts, 5xx (503 included), unreadable 2xx bodies, 3xx, and any non-Pey `Throwable`.
+- **Fail closed**:
+  - if `acquire` throws, nothing is sent;
+  - if storing the result fails after success, the result is still returned and the key stays `started`, which goes stale and then `unknown`. It never reopens;
+  - if releasing fails, the key stays blocked.
+- **The only way to resend a blocked key** is an explicit `release()`, after the application has confirmed with Pey that nothing was created. Releases are logged at `notice`.
+- **Retention** defaults to 7 days. It must outlast every retry horizon (queues, users). `staleAfterSeconds` must be at least 60 and must exceed the HTTP timeout.
+- Mutating any decision (release on timeout, release unexpected errors, treat 5xx or unreadable responses as client errors, skip the fingerprint, ignore `acquire`, skip the unknown or stale checks, accept a corrupt record) fails the suite.
 
 ## 7. Webhooks
 
