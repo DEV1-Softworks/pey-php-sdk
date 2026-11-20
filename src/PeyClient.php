@@ -10,6 +10,8 @@ use Dev1\Pey\Resources\BankAccounts;
 use Dev1\Pey\Resources\BankAccountsInterface;
 use Dev1\Pey\Resources\Codi;
 use Dev1\Pey\Resources\CodiInterface;
+use Dev1\Pey\Resources\PaymentLinks;
+use Dev1\Pey\Resources\PaymentLinksInterface;
 use Dev1\Pey\Security\BankAccountGuard;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -34,6 +36,8 @@ final class PeyClient implements PeyClientInterface
 
     private readonly BankAccounts $bankAccounts;
 
+    private readonly PaymentLinks $paymentLinks;
+
     /**
      * @internal use PeyClient::create()
      */
@@ -41,6 +45,7 @@ final class PeyClient implements PeyClientInterface
     {
         $this->codi = new Codi($transport);
         $this->bankAccounts = new BankAccounts($transport, $guard, $logger);
+        $this->paymentLinks = new PaymentLinks($transport);
     }
 
     /**
@@ -76,5 +81,10 @@ final class PeyClient implements PeyClientInterface
     public function bankAccounts(): BankAccountsInterface
     {
         return $this->bankAccounts;
+    }
+
+    public function paymentLinks(): PaymentLinksInterface
+    {
+        return $this->paymentLinks;
     }
 }
