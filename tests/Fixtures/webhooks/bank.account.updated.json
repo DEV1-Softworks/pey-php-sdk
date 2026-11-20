@@ -1,0 +1,11 @@
+{
+  "type": "bank.account.updated",
+  "bankAccountId": "01JBAVWE4NS5TGXHWGMX3KH23Q",
+  "name": "Empresa SA de CV",
+  "ownerType": "API_KEY",
+  "ownerId": "01M3QMMR6X9CBVDY1SF3G8QWNW",
+  "taxId": "XAXX010101000",
+  "codiStatus": "ACTIVE",
+  "clabe": "012180001234567899",
+  "entity": "BUSINESS"
+}
