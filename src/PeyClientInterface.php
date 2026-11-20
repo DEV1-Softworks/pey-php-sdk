@@ -7,6 +7,7 @@ namespace Dev1\Pey;
 use Dev1\Pey\Resources\BankAccountsInterface;
 use Dev1\Pey\Resources\CodiInterface;
 use Dev1\Pey\Resources\PaymentLinksInterface;
+use Dev1\Pey\Resources\TransactionsInterface;
 
 /**
  * Entry point to the Pey API. Type-hint this interface in your code, so tests
@@ -22,4 +23,9 @@ interface PeyClientInterface
     public function bankAccounts(): BankAccountsInterface;
 
     public function paymentLinks(): PaymentLinksInterface;
+
+    /**
+     * Confirm payments here (get()) before fulfilling an order.
+     */
+    public function transactions(): TransactionsInterface;
 }
