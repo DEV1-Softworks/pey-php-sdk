@@ -45,12 +45,14 @@ Each returns the webhook body Pey would send (`$payment->webhookBody`), in the d
 ```php
 use Dev1\Pey\Exception\NetworkException;
 
-$pey->failNext(NetworkException::create('POST', '/codi/qr', false, 'Refused', 'connection refused'));
+$pey->failNext(NetworkException::create('POST', '/codi/qr', true, 'Refused', 'connection refused'));
 $pey->failNextAfterProcessing(NetworkException::create('POST', '/codi/pn', true, 'Timeout', 'timed out'));
 ```
 
-- `failNext()`: the next call fails without doing anything.
-- `failNextAfterProcessing()`: the change happens and the call still fails, like a timeout after Pey processed the request. Use it to test your handling of unknown outcomes with [`IdempotentRequests`](idempotency.md).
+- `failNext()`: the next call fails without doing anything, like a connection Pey never received.
+- `failNextAfterProcessing()`: the change happens and the call still fails, like a timeout after Pey processed the request.
+
+For a POST, pass `true` as the third argument in both cases: the real client reports every network failure of a POST as possibly processed, because it cannot tell these two cases apart. Use them to test your handling of unknown outcomes with [`IdempotentRequests`](idempotency.md).
 
 ### Assertions on calls
 

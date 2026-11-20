@@ -32,11 +32,12 @@ For each key, Pey is called **at most once**. Calling again with the same key an
 | belongs to an attempt with an **unknown outcome** | `IdempotencyOutcomeUnknownException`: reconcile first (below) |
 
 After a failure, the key is released (so the same call may be sent again) **only when Pey certainly did not act**:
-- local validation;
-- any 4xx answer from Pey;
-- a request that was never sent.
+- local validation, before anything is sent;
+- any 4xx answer from Pey.
 
-Everything else keeps the key blocked as "unknown": timeouts, network errors after sending, any 5xx, an unreadable response, an unexpected error, or a process that died mid-request. In all of those cases the charge **may exist**.
+Everything else keeps the key blocked as "unknown": any `NetworkException`, any 5xx, an unreadable response, an unexpected error, or a process that died mid-request. In all of those cases the charge **may exist**.
+
+A `NetworkException` always blocks the key, whatever the HTTP client reported. An HTTP client cannot prove that a failed request never reached Pey, and clients do not agree on what their exception types mean: Guzzle reports some timeouts and broken connections that happen after the request was sent as request errors. Even a request the HTTP client rejected locally blocks its key until you release it. The SDK builds and validates its requests itself, so this should be rare.
 
 ## Reconciling an unknown outcome
 

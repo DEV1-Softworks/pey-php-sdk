@@ -110,7 +110,7 @@ Every exception extends `Dev1\Pey\Exception\PeyException`, which offers `httpSta
 | `ConflictException` | 409, for payment-link updates: `isPaymentLinkNotPending()`, `isConcurrentUpdate()` |
 | `RateLimitedException` | 429. `retryAfter()` holds Pey's `Retry-After` header |
 | `ServerException`, `ServiceUnavailableException` | 5xx; 503 is maintenance |
-| `NetworkException` | No response. **For a POST, check `requestMayHaveBeenProcessed()`**: the charge may exist |
+| `NetworkException` | No response. **For a POST, the charge may exist**: `requestMayHaveBeenProcessed()` is always true |
 | `UnexpectedResponseException` | Pey answered with something the SDK cannot read |
 | `BankAccountNotAllowedException` | The CLABE is not on `allowedClabes`; nothing was sent |
 
