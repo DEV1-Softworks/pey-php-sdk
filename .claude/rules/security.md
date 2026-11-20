@@ -13,7 +13,7 @@ Applies to the Pey API key and the webhook secret.
   - is read only through `reveal()`, at the exact point where the raw value must be sent.
 - Never pass a PSR-18 exception or a PSR-7 request as an ordinary argument to a function that may throw: both carry the `Authorization` header, which would land in the new exception's trace arguments. Mark such parameters `#[\SensitiveParameter]`, and never chain PSR-18 exceptions as `previous`.
 - Use `get_debug_type()`, never `::class`, for class names that end up in messages or logs. An anonymous class name contains a NUL byte and an absolute file path.
-- Never store a `StandardWebhooks\Webhook` instance as a property. It keeps the decoded secret in a plain private property, which `var_export` and `serialize` expose. Create it inside the method that verifies and let it go out of scope.
+- Never store a `StandardWebhooks\Webhook` instance as a property. It keeps the decoded secret in a plain private property, which `var_export` and `serialize` expose. `WebhookVerifier` creates it inside `signatureMatches()` and lets it go out of scope.
 - Exceptions never include the secret, request headers, or raw request bodies in their message or context. `PeyException` subclasses carry the method, a path template, the status code, Pey's `error.type` and `requestId`, and nothing more.
 - Logging uses PSR-3. A logged request shows `Authorization: Bearer [REDACTED]`. Request and response bodies are not logged by default, because they contain CLABEs, names, phone numbers and metadata.
 - Tests prove all of the above (see `testing.md`, "Mandatory security tests").
@@ -107,14 +107,21 @@ Throw `Exception\ValidationException` with field-level details (`field => list o
 
 ## 7. Webhooks
 
-- Verify with the official Standard Webhooks PHP library (`standard-webhooks/standard-webhooks`). **Never hand-roll HMAC.**
-- Verify the raw body exactly as received (no re-encoding) and match header names case-insensitively.
-- Timestamp tolerance defaults to 5 minutes, is configurable, and is measured with `psr/clock`. The library hard-codes ±5 minutes against `time()`, so the timestamp check is ours and the signature computation is the library's. The design is reviewed in the `webhooks` PR.
-- Expose `webhook-id` so consumers can deduplicate. It is Pey's documented idempotency key for deliveries.
-- Build typed events **only** from the verified raw body. Never parse an unverified body.
-- Document for consumers:
-  - Confirm a payment with `GET /transaction/{id}` before fulfilling: `status` must be `PAID`, and `amountBreakdown.base`, `payableType` and `payableId` must match the order. `amount` includes tip and fee.
-  - A QR without expiration can be paid many times, so fulfil per `transactionId`.
+- `Webhooks\WebhookVerifier` verifies with the official Standard Webhooks library (`standard-webhooks/standard-webhooks` ^1.3). **Never hand-roll HMAC.**
+  - The library's `sign()` computes the expected `v1` signature, and the SDK compares it with `hash_equals` against every space-separated signature in the header, for every configured secret (several are allowed during a rotation).
+  - The library's own `verify()` is not used, because it hard-codes ±5 minutes against `time()`.
+  - `StandardWebhooksVectors` anchors the tests to the spec's published vector, reproduced independently with Python's `hmac`.
+- **Order of checks**: headers → id format → timestamp within the tolerance (PSR-20 clock, default 300 s both ways, 1 s–1 day) → signature → **only then** is the body parsed (`EventFactory::fromVerifiedBody`). A forged body is never parsed, and a test proves it with a non-JSON forged body.
+- Headers are matched case-insensitively, each must appear exactly once, and values are never echoed in messages. The timestamp must be positive Unix seconds without leading zeros.
+- Verify the raw body exactly as received: re-encoding parsed JSON breaks the signature. `verifyRequest()` rewinds PSR-7 bodies.
+- **Secrets**:
+  - held as `Secret` (or a list of them) and validated strictly as `whsec_` + base64 at construction;
+  - the constructor parameter is `#[\SensitiveParameter]`, as are the body parameters;
+  - the library's `Webhook` object, which keeps the decoded secret in a plain property, is created per verification and never stored.
+- `VerifiedWebhook::$id` is the `webhook-id` for deduplication.
+- Unknown event types become `UnknownEvent`, so new Pey events never break verification.
+- Payment events document that the consumer must confirm with `GET /transaction/{id}` (PAID, payableType/payableId, `amountBreakdown->base`) and fulfil per `transactionId`.
+- Mutating the verifier fails the suite: accepting old or future timestamps, skipping the signature, parsing before verifying, trying only the first secret or signature, accepting repeated headers, an off-by-one tolerance, not rewinding, case-sensitive headers, unvalidated timestamps.
 
 ## 8. Transport defaults
 

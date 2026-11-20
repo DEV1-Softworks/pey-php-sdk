@@ -65,6 +65,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Includes the `IdempotencyStore` contract and an `InMemoryIdempotencyStore` for tests.
 - `IdempotencyInProgressException`, `IdempotencyOutcomeUnknownException` and `IdempotencyKeyReusedException`.
 - `toArray()` on `QrCode`, `PushNotification` and `CreatedPaymentLink`.
+- Webhook verification (`Webhooks\WebhookVerifier`):
+  - checks Standard Webhooks signatures with the official `standard-webhooks/standard-webhooks` library, against a configurable timestamp tolerance (PSR-20 clock, default 5 minutes);
+  - accepts several secrets during a rotation;
+  - verifies before parsing, and returns a `VerifiedWebhook` with the `webhook-id` for deduplication and a typed event.
+- Webhook events: `CodiQrPaymentReceived`, `CodiPushNotificationPaymentReceived`, `PaymentLinkStatusUpdated`, `BankAccountUpdated`, and `UnknownEvent` for types this version does not model.
+- `WebhookVerificationException`, which exposes the failure reason (`VerificationFailure`).
 
 ### Fixed
 

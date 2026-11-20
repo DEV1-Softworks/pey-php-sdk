@@ -1,0 +1,27 @@
+{
+  "apiKeyId": "01HXYZ1234567890ABCDEFGH",
+  "type": "payment_link.status_updated",
+  "paymentLinkId": "01HXYZ1234567890ABCDEFGH",
+  "status": "paid",
+  "clientReferenceId": "order-12345",
+  "transactions": [
+    {
+      "transactionId": "01HXYZTXN1234567890ABCDE",
+      "paymentMethod": "CARD",
+      "datePaid": 1715000000,
+      "amount": 153.50,
+      "amountBreakdown": {
+        "base": 100.00,
+        "tip": 50.00,
+        "fee": 3.50
+      },
+      "applicationFee": 11.00,
+      "metadata": {
+        "externalMetadata": {
+          "orderId": "12345",
+          "customerEmail": "customer@example.com"
+        }
+      }
+    }
+  ]
+}
