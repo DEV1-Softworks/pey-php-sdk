@@ -15,8 +15,9 @@ use Dev1\Pey\Exception\PeyException;
  *
  * Both calls are POSTs and are never retried automatically: Pey has no
  * idempotency keys, so a retry could create a second charge. On a
- * NetworkException whose requestMayHaveBeenProcessed() is true, check the
- * outcome (for example with the transaction listings) before trying again.
+ * NetworkException (for a POST, requestMayHaveBeenProcessed() is always
+ * true), check the outcome (for example with the transaction listings)
+ * before trying again.
  */
 interface CodiInterface
 {

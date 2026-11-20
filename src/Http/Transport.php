@@ -305,9 +305,15 @@ final class Transport
      */
     private function networkFailure(string $method, string $pathTemplate, #[\SensitiveParameter] \Throwable $cause): NetworkException
     {
-        // A request the client rejected before sending cannot have been processed.
-        // Anything else (timeouts included) may have reached Pey after the request was sent.
-        $mayHaveBeenProcessed = $method !== 'GET' && !$cause instanceof RequestExceptionInterface;
+        // Fail closed: every client or transport failure of a non-GET request
+        // may have been processed. PSR-18 cannot prove that a request never left,
+        // and clients do not agree on what their exception types mean: Guzzle
+        // throws RequestExceptionInterface for timeouts and broken connections
+        // after the request was sent, or after the response started. The SDK
+        // never infers "not sent" from an exception type. The only failures it
+        // knows happened before sending (an unencodable body, an unfilled path
+        // placeholder) are thrown before sendRequest() and never reach this point.
+        $mayHaveBeenProcessed = $method !== 'GET';
 
         // get_debug_type() rather than ::class: an anonymous class name contains a
         // NUL byte and the absolute path of the file that defines it.

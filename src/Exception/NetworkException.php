@@ -58,8 +58,9 @@ final class NetworkException extends PeyException
 
     /**
      * True when the request may have reached Pey, so its effect (a charge, a
-     * payment link, a bank account) is unknown. Always true for a POST that
-     * failed after it could have been sent.
+     * payment link, a bank account) is unknown. Always true for a POST: an
+     * HTTP client cannot prove that a failed request was never sent, whatever
+     * exception it throws.
      */
     public function requestMayHaveBeenProcessed(): bool
     {

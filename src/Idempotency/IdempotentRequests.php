@@ -47,10 +47,10 @@ use Psr\Log\NullLogger;
  * 2. sends the request once;
  * 3. on success, stores the result for replay;
  * 4. on failure, releases the key only if Pey certainly did not act (local
- *    validation, a 4xx from Pey, a request that was never sent). Any other
- *    failure (timeout, 5xx, unreadable response, unexpected error) keeps the
- *    key blocked as "outcome unknown" until you reconcile it and call
- *    release().
+ *    validation, or a 4xx from Pey). Any other failure (a network or HTTP
+ *    client error of any kind, a 5xx, an unreadable response, an unexpected
+ *    error) keeps the key blocked as "outcome unknown" until you reconcile
+ *    it and call release().
  *
  * Every doubtful case blocks: a corrupt record, a store that cannot be read,
  * or a stale in-progress attempt. Keys are hashed before they reach the store.
@@ -304,8 +304,10 @@ final class IdempotentRequests
     }
 
     /**
-     * True only when the request never reached Pey, or Pey rejected it with a
-     * 4xx. Anything else may have created a charge.
+     * True only when the SDK stopped the request before sending it (local
+     * validation, the bank account guard, configuration), or Pey rejected it
+     * with a 4xx. Anything else may have created a charge, including every
+     * network or HTTP client failure of these POSTs.
      */
     private static function peyCertainlyDidNotAct(\Throwable $e): bool
     {
