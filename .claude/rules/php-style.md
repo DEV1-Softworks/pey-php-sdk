@@ -17,7 +17,7 @@
 - Depend on PSR interfaces only: PSR-18 client, PSR-17 factories, PSR-7 messages, PSR-3 logger, PSR-20 clock. Never import a concrete HTTP client (Guzzle, Symfony) at runtime.
 - No global state, singletons or static mutable properties. Inject dependencies through constructors.
 - No magic: no `__get`/`__set`/`__call`, no dynamic properties, no `extract()`. A `__debugInfo` that redacts secrets is the exception.
-- Every thrown exception extends `Exception\PeyException`. Messages must not contain secrets, request headers or raw request bodies.
+- Every exception a consumer can trigger extends `Exception\PeyException`. Internal invariant violations (SDK bugs, such as a path template with an unfilled placeholder) may throw `\LogicException`. Messages must not contain secrets, request headers or raw request bodies.
 - Mark anything that is not public API `@internal`. The Laravel and Symfony bridges must only need public API.
 - Runtime dependencies are limited to `psr/http-client`, `psr/http-factory`, `psr/http-message`, `psr/log`, `psr/clock`, `php-http/discovery` and `standard-webhooks/standard-webhooks`. Ask the maintainer before adding anything else. `tests/PackageMetadataTest.php` enforces this list.
 

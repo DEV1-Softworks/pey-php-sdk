@@ -7,11 +7,12 @@ The Pey API is production only. A single API key can create charges and register
 Applies to the Pey API key and the webhook secret.
 
 - Mark every parameter that receives a secret (constructors, factories, setters, closures) with `#[\SensitiveParameter]`, so stack traces show `SensitiveParameterValue` instead of the value.
-- Objects that hold a secret must:
-  - implement `__debugInfo()` with the secret redacted (this covers `var_dump` and `print_r`);
-  - refuse serialization: `__serialize()` throws, and `__unserialize()` throws too;
-  - not be `JsonSerializable` in a way that exposes the secret;
-  - survive `var_export()`. It **ignores `__debugInfo()`** and prints private properties, so never keep a secret as a plain string property of an object that can be exported. Hold it in a dedicated wrapper that cannot be exported meaningfully (the mechanism is decided and tested in `transport-and-errors`).
+- Always hold a secret in `Security\Secret`, never in a plain `string` property. `var_export()` **ignores `__debugInfo()`** and prints private properties, and an `(array)` cast exposes even a closure's captured variables. `Secret` therefore keeps the value outside the object, in a private static `WeakMap` keyed by the instance. The object has no properties to print, and the entry is released when the instance is garbage-collected. `Secret`:
+  - returns `[REDACTED]` from `__debugInfo()`, `__toString()` and `jsonSerialize()`;
+  - refuses `serialize()`, `unserialize()` and `clone` by throwing `SecretExposureException`;
+  - is read only through `reveal()`, at the exact point where the raw value must be sent.
+- Never pass a PSR-18 exception or a PSR-7 request as an ordinary argument to a function that may throw: both carry the `Authorization` header, which would land in the new exception's trace arguments. Mark such parameters `#[\SensitiveParameter]`, and never chain PSR-18 exceptions as `previous`.
+- Use `get_debug_type()`, never `::class`, for class names that end up in messages or logs. An anonymous class name contains a NUL byte and an absolute file path.
 - Never store a `StandardWebhooks\Webhook` instance as a property. It keeps the decoded secret in a plain private property, which `var_export` and `serialize` expose. Create it inside the method that verifies and let it go out of scope.
 - Exceptions never include the secret, request headers, or raw request bodies in their message or context. `PeyException` subclasses carry the method, a path template, the status code, Pey's `error.type` and `requestId`, and nothing more.
 - Logging uses PSR-3. A logged request shows `Authorization: Bearer [REDACTED]`. Request and response bodies are not logged by default, because they contain CLABEs, names, phone numbers and metadata.
@@ -86,8 +87,14 @@ Throw `Exception\ValidationException` with field-level details (`field => list o
 
 ## 8. Transport defaults
 
-- Timeouts default to 5 s connect and 15 s total, and both are configurable. PSR-18 has no timeout API, so the transport builds known clients with these options when it discovers them. A user-supplied client is the user's responsibility, and the docs say so.
-- TLS verification is always on. There is **no** option to disable it. The base URL must be `https://`.
+- Timeouts default to 5 s connect and 15 s total, and both are configurable. PSR-18 has no timeout API, so `Http\HttpClientFactory` builds known clients itself, with redirects off and TLS verification on:
+  1. Guzzle: exact `connect_timeout` and `timeout`.
+  2. Symfony HttpClient: it has no connect timeout, so both `timeout` (idle) and `max_duration` are set to the total. A short idle timeout would abort slow responses and leave a POST's outcome unknown.
+  3. Any other client from php-http/discovery, with a logged warning that timeouts could not be set.
+
+  A client the user passes in is used as-is: its timeouts and TLS settings are the user's responsibility, and the docs say so.
+- Never configure the API key on the HTTP client (for example as Guzzle default headers). It is added per request, in `Transport::send()`.
+- TLS verification is always on. There is **no** option to disable it. The base URL must be `https://`; it is configurable only so a future Pey environment can be used.
 
 ## 9. No secrets in the repository
 
