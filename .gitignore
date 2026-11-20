@@ -1,0 +1,20 @@
+# Dependencies (this is a library: the lock file is not committed)
+/vendor/
+/composer.lock
+
+# Build and tool caches
+/build/
+/.phpunit.cache/
+/.php-cs-fixer.cache
+
+# Secrets: never commit environment files
+.env*
+
+# Machine-specific Claude Code settings
+/CLAUDE.local.md
+/.claude/settings.local.json
+
+# OS / IDE
+.DS_Store
+/.idea/
+/.vscode/

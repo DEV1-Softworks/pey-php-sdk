@@ -1,0 +1,36 @@
+# gitleaks configuration: the built-in rules plus narrow allowlists for fake
+# test values.
+#
+# Rule for new entries: each allowlist must use condition = "AND" so it matches
+# BOTH a single file AND the specific fake value. A real credential added to the
+# same file is then still reported. Never allowlist a whole directory.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake Pey pagination token (nextToken) in the Transport query-encoding test. Not a credential."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Http/TransportTest\.php$''']
+regexes = ['''eyJQSyI6ICJUWE4j''']
+
+[[allowlists]]
+description = "Example base64 pagination cursors (nextToken) in the verbatim snapshot of Pey's OpenAPI document. Not credentials."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Fixtures/openapi\.json$''']
+regexes = ['''eyJQSyI6IC''']
+
+[[allowlists]]
+description = "Fake base64 pagination cursor (base64 of {\"a\":1}) in the Transactions cursor-encoding test. Not a credential."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Resources/TransactionsTest\.php$''']
+regexes = ['''eyJhIjoxfQ''']
+
+[[allowlists]]
+description = "Published Standard Webhooks test vector and a second test-only secret, kept in one test support file. Not credentials."
+condition = "AND"
+paths = ['''(?:^|/)tests/Support/StandardWebhooksVectors\.php$''']
+regexes = ['''whsec_[A-Za-z0-9+/=]+''']
