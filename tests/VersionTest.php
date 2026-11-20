@@ -25,7 +25,7 @@ final class VersionTest extends TestCase
 
     public function testUserAgentIdentifiesPackageAndVersion(): void
     {
-        self::assertStringStartsWith('dev1-pey-core/' . Version::VERSION . ' ', Version::USER_AGENT);
+        self::assertStringStartsWith('dev1-pey-php-sdk/' . Version::VERSION . ' ', Version::USER_AGENT);
     }
 
     public function testUserAgentDeclaresTheSdkAsUnofficial(): void

@@ -1,4 +1,4 @@
-# dev1/pey-core: unofficial PHP SDK for the Pey API
+# dev1/pey-php-sdk: unofficial PHP SDK for the Pey API
 
 Framework-agnostic PHP 8.2+ SDK for the Pey API (CoDi payments, Mexico). This is the core package. The Laravel bridge (`dev1/pey-laravel`) and Symfony bundle only wire things together and never re-implement logic, so every behavior belongs here. Never present the SDK as an official Pey or Banco de México product.
 

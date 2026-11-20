@@ -17,5 +17,5 @@ final class Version
     /**
      * Sent as the User-Agent header so Pey can identify traffic from this SDK.
      */
-    public const USER_AGENT = 'dev1-pey-core/' . self::VERSION . ' (+https://github.com/DEV1-Softworks/pey-sdk; unofficial)';
+    public const USER_AGENT = 'dev1-pey-php-sdk/' . self::VERSION . ' (+https://github.com/DEV1-Softworks/pey-php-sdk; unofficial)';
 }

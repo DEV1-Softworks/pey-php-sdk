@@ -33,7 +33,7 @@ final class PackageMetadataTest extends TestCase
     {
         $composer = self::composerJson();
 
-        self::assertSame('dev1/pey-core', $composer['name'] ?? null);
+        self::assertSame('dev1/pey-php-sdk', $composer['name'] ?? null);
         self::assertSame('MIT', $composer['license'] ?? null);
         self::assertSame(['Dev1\\Pey\\' => 'src/'], self::psr4Autoload($composer));
     }
