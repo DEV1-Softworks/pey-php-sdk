@@ -37,7 +37,7 @@
 The package is not on Packagist yet. Once `v0.1.0` is released:
 
 ```bash
-composer require dev1/pey-core
+composer require dev1/pey-php-sdk
 ```
 
 ## Development

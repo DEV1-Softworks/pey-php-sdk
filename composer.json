@@ -1,5 +1,5 @@
 {
-    "name": "dev1/pey-core",
+    "name": "dev1/pey-php-sdk",
     "description": "Unofficial PHP SDK for the Pey API (CoDi payments, Mexico). Not affiliated with Pey or Banco de México.",
     "type": "library",
     "license": "MIT",
