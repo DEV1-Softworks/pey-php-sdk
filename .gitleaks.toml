@@ -28,3 +28,9 @@ targetRules = ["generic-api-key"]
 condition = "AND"
 paths = ['''(?:^|/)tests/Resources/TransactionsTest\.php$''']
 regexes = ['''eyJhIjoxfQ''']
+
+[[allowlists]]
+description = "Published Standard Webhooks test vector and a second test-only secret, kept in one test support file. Not credentials."
+condition = "AND"
+paths = ['''(?:^|/)tests/Support/StandardWebhooksVectors\.php$''']
+regexes = ['''whsec_[A-Za-z0-9+/=]+''']
