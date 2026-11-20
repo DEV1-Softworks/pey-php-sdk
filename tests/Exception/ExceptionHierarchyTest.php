@@ -159,6 +159,14 @@ final class ExceptionHierarchyTest extends TestCase
         self::assertNull($e->apiError());
     }
 
+    public function testInvalidResponseFieldsAreNamedButNotEchoed(): void
+    {
+        $e = UnexpectedResponseException::invalidField('Transaction', 'items[0].amount', 'a decimal amount');
+
+        self::assertSame('Unexpected Pey response: Transaction field "items[0].amount" must be a decimal amount.', $e->getMessage());
+        self::assertNull($e->httpStatus());
+    }
+
     public function testUnexpectedStatusesKeepPeysError(): void
     {
         $e = UnexpectedResponseException::unexpectedStatus('GET', '/x', 418, new ApiError('TEAPOT', 'short and stout', null));
