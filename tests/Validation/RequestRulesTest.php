@@ -187,6 +187,16 @@ final class RequestRulesTest extends TestCase
         self::assertSame($expected, $violations->all());
     }
 
+    public function testFreeTextMustBeValidUtf8(): void
+    {
+        $violations = new Violations();
+        Text::checkUtf8('Pago en Tacos Pey — ñ 🌮', 'concept', $violations);
+        self::assertTrue($violations->isEmpty());
+
+        Text::checkUtf8("\xB1\x31", 'concept', $violations);
+        self::assertSame(['concept' => ['must be valid UTF-8.']], $violations->all());
+    }
+
     public function testExactLengthMessage(): void
     {
         $violations = new Violations();

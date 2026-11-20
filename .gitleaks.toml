@@ -14,3 +14,10 @@ targetRules = ["generic-api-key"]
 condition = "AND"
 paths = ['''(?:^|/)tests/Http/TransportTest\.php$''']
 regexes = ['''eyJQSyI6ICJUWE4j''']
+
+[[allowlists]]
+description = "Example base64 pagination cursors (nextToken) in the verbatim snapshot of Pey's OpenAPI document. Not credentials."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Fixtures/openapi\.json$''']
+regexes = ['''eyJQSyI6IC''']

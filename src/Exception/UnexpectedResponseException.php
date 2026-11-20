@@ -25,4 +25,17 @@ final class UnexpectedResponseException extends PeyException
     {
         return new self(ApiException::describe($method, $pathTemplate, $httpStatus, $error), $httpStatus, $error);
     }
+
+    /**
+     * A field of a successful response is missing or has the wrong type. The
+     * message names the field but never its value, which may be personal data.
+     *
+     * @param string $resource the response object, for example "Transaction"
+     * @param string $path     the field path, for example "items[0].amount"
+     * @param string $expected what the field should be, for example "a decimal amount"
+     */
+    public static function invalidField(string $resource, string $path, string $expected): self
+    {
+        return new self(\sprintf('Unexpected Pey response: %s field "%s" must be %s.', $resource, $path, $expected));
+    }
 }

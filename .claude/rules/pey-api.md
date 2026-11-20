@@ -4,7 +4,7 @@ Verified on 2026-11-20 against `openapi.json` with `info.version` `2026-10-20` (
 
 ## Sources
 
-- Spec: https://docs.pey.mx/openapi.json (snapshot in `tests/Fixtures/openapi.json` from `enums-and-dtos` onwards)
+- Spec: https://docs.pey.mx/openapi.json. A verbatim snapshot lives in `tests/Fixtures/openapi.json`; see `tests/Fixtures/README.md` for its version, SHA-256 and how to refresh it.
 - API intro: https://docs.pey.mx/en/docs/api/codi-api
 - Webhooks:
   - intro (Standard Webhooks, `webhook-id`): https://docs.pey.mx/en/docs/webhooks/introduction
@@ -192,3 +192,4 @@ Collect these in `docs/known-gaps.md` for v0.1.0.
 10. `ownerType` values other than `API_KEY` are undocumented.
 11. Several ids in the spec's examples are not valid ULIDs (22 and 24 characters).
 12. The push webhook has no `codiId`. Correlate pushes by the `transactionId` returned at creation.
+13. Several rules exist only in field descriptions, not in the JSON schema: the QR `expiration` "0 or ≥ 360" (the schema says `minimum: 0`), the CLABE check digit, HTTPS-only redirect URLs, and ULID ids. The SDK enforces them anyway; `RequestContractTest` records each gap.

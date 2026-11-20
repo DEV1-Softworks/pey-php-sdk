@@ -82,6 +82,10 @@ final class Json
             return $value->literal;
         }
 
+        if ($value instanceof JsonObject) {
+            return self::encodeMembers($value->members, $depth);
+        }
+
         if ($value instanceof \JsonSerializable) {
             return self::encodeValue($value->jsonSerialize(), $depth + 1);
         }
@@ -113,6 +117,16 @@ final class Json
             return '[' . implode(',', $items) . ']';
         }
 
+        return self::encodeMembers($value, $depth);
+    }
+
+    /**
+     * @param array<array-key, mixed> $value
+     *
+     * @throws \JsonException
+     */
+    private static function encodeMembers(array $value, int $depth): string
+    {
         $members = [];
         foreach ($value as $key => $item) {
             $members[] = json_encode((string) $key, self::ENCODE_FLAGS) . ':' . self::encodeValue($item, $depth + 1);

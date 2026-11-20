@@ -20,6 +20,16 @@ final class Text
         return $count === false ? null : $count;
     }
 
+    /**
+     * For free text with no documented length limit (for example `concept`).
+     */
+    public static function checkUtf8(string $value, string $field, Violations $violations): void
+    {
+        if (self::length($value) === null) {
+            $violations->add($field, 'must be valid UTF-8.');
+        }
+    }
+
     public static function checkLength(string $value, int $min, int $max, string $field, Violations $violations): void
     {
         $length = self::length($value);
