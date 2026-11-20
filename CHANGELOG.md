@@ -46,6 +46,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$pey->bankAccounts()->register()` and `->get()`. Registration goes through `Security\BankAccountGuard`: only CLABEs listed in the new `Config::$allowedClabes` can be registered, and an empty list (the default) blocks every registration before anything is sent (`BankAccountNotAllowedException`, which shows a masked CLABE).
 - `Validation\Clabe::mask()`, which shows only the last 4 digits.
 - `$pey->paymentLinks()->create()`, `->update()` and `->get()`. Updates change only the amount and raise `ConflictException` (`isPaymentLinkNotPending()` / `isConcurrentUpdate()`) once a link is no longer pending.
+- `$pey->transactions()`:
+  - `->get()` confirms a payment before you fulfil an order;
+  - `->listForApiKey()`, `->listForBankAccount()` and `->listForCodiQr()` return one page each;
+  - the matching `all*()` generators walk every page lazily.
+- `Pagination\Paginator`: lazy `nextToken` pagination that stops with `UnexpectedResponseException` if Pey repeats a cursor.
+- `Validation\OpaqueId` for identifiers with undocumented formats (CoDi QR ids, cursors).
 
 ### Fixed
 
