@@ -6,6 +6,7 @@
 /.gitattributes export-ignore
 /.github export-ignore
 /.gitignore export-ignore
+/.gitleaks.toml export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /CLAUDE.md export-ignore
 /docs export-ignore

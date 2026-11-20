@@ -1,0 +1,16 @@
+# gitleaks configuration: the built-in rules plus narrow allowlists for fake
+# test values.
+#
+# Rule for new entries: each allowlist must use condition = "AND" so it matches
+# BOTH a single file AND the specific fake value. A real credential added to the
+# same file is then still reported. Never allowlist a whole directory.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Fake Pey pagination token (nextToken) in the Transport query-encoding test. Not a credential."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Http/TransportTest\.php$''']
+regexes = ['''eyJQSyI6ICJUWE4j''']
