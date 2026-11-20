@@ -6,12 +6,14 @@ namespace Dev1\Pey\Tests\Http;
 
 use Dev1\Pey\Http\Json;
 use Dev1\Pey\Http\JsonNumber;
+use Dev1\Pey\Http\JsonObject;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[CoversClass(Json::class)]
 #[CoversClass(JsonNumber::class)]
+#[CoversClass(JsonObject::class)]
 final class JsonTest extends TestCase
 {
     public function testItWritesJsonNumbersVerbatim(): void
@@ -44,6 +46,14 @@ final class JsonTest extends TestCase
             '{"concept":"Órden #1/2 \"café\"","numRef":"0012345","generateImage":true,"nothing":null,"count":3,"ratio":1.0,'
             . '"metadata":{"orderId":"12345","gift":false},"list":[1,"two",3.50],"empty":[]}',
             $json,
+        );
+    }
+
+    public function testJsonObjectsAreAlwaysObjects(): void
+    {
+        self::assertSame(
+            '{"metadata":{"0":"a","1":"b"},"empty":{}}',
+            Json::encodeObject(['metadata' => new JsonObject(['0' => 'a', '1' => 'b']), 'empty' => new JsonObject([])]),
         );
     }
 
