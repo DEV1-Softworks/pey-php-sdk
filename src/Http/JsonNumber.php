@@ -15,7 +15,7 @@ namespace Dev1\Pey\Http;
  */
 final readonly class JsonNumber
 {
-    private const PATTERN = '/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/';
+    private const PATTERN = '/^-?(?:0|[1-9]\d*)(?:\.\d+)?$/D';
 
     public string $literal;
 

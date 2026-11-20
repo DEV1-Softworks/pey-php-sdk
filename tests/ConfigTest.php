@@ -111,6 +111,8 @@ final class ConfigTest extends TestCase
         yield 'space inside' => ['pey key'];
         yield 'leading space' => [' pey_key'];
         yield 'line break' => ["pey_key\r\nX-Injected: 1"];
+        yield 'trailing line break' => ["pey_key\n"];
+        yield 'trailing carriage return and line break' => ["pey_key\r\n"];
         yield 'tab' => ["pey\tkey"];
         yield 'non-ASCII' => ['pey_kéy'];
     }

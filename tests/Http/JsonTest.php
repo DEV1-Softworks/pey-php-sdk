@@ -204,6 +204,7 @@ final class JsonTest extends TestCase
         yield 'space' => [' 1'];
         yield 'injection' => ['1,"admin":true'];
         yield 'NaN' => ['NaN'];
+        yield 'trailing line break' => ["150.00\n"];
     }
 
     #[DataProvider('provideInvalidNumberLiterals')]

@@ -96,7 +96,7 @@ final readonly class Config
         // Visible ASCII only: anything else could break or inject into the
         // Authorization header, and an invalid header would make the PSR-7
         // implementation throw with the key in its trace arguments.
-        if (preg_match('/^[\x21-\x7E]+$/', $value) !== 1) {
+        if (preg_match('/^[\x21-\x7E]+$/D', $value) !== 1) {
             throw ConfigurationException::because('The Pey API key must be a non-empty string of visible ASCII characters without spaces.');
         }
 
