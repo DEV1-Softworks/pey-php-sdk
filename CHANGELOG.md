@@ -41,6 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request DTOs that validate every field and report all errors at once: `CreateQrRequest`, `CreatePushNotificationRequest`, `RegisterBankAccountRequest`, `CreatePaymentLinkRequest` and `UpdatePaymentLinkRequest`. Amounts are sent as exact JSON numbers, and metadata always as a JSON object.
 - Response DTOs: `QrCode`, `PushNotification`, `BankAccountRegistration`, `BankAccount`, `CreatedPaymentLink`, `UpdatedPaymentLink`, `PaymentLink`, `Transaction`, `TransactionSummary`, `TransactionPage`, `AmountBreakdown` and `TransactionMetadata`. Amounts are `Amount`, timestamps are UTC `DateTimeImmutable`, and malformed responses raise `UnexpectedResponseException` naming the field.
 - Contract tests against a verbatim snapshot of Pey's `openapi.json` (version `2026-10-20`), covering request schemas, response examples, DTO field names and enum values.
+- `PeyClient::create()` and `PeyClientInterface`: the entry point, with HTTP components discovered when not given.
+- `$pey->codi()->createQr()` and `->createPushNotification()`: CoDi QR codes and push notifications. They are never retried automatically.
 
 ### Fixed
 
