@@ -1,6 +1,6 @@
 # Pey PHP SDK (unofficial)
 
-[![CI](https://github.com/DEV1-Softworks/pey-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/DEV1-Softworks/pey-sdk/actions/workflows/ci.yml)
+[![CI](https://github.com/DEV1-Softworks/pey-php-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/DEV1-Softworks/pey-php-sdk/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **Unofficial PHP SDK for the Pey API.** It covers CoDi® payments in Mexico: QR charges, push-notification charges, payment links, bank accounts, transactions and signed webhooks.

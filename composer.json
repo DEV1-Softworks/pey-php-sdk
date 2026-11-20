@@ -13,10 +13,10 @@
         "psr-18",
         "webhooks"
     ],
-    "homepage": "https://github.com/DEV1-Softworks/pey-sdk",
+    "homepage": "https://github.com/DEV1-Softworks/pey-php-sdk",
     "support": {
-        "issues": "https://github.com/DEV1-Softworks/pey-sdk/issues",
-        "source": "https://github.com/DEV1-Softworks/pey-sdk"
+        "issues": "https://github.com/DEV1-Softworks/pey-php-sdk/issues",
+        "source": "https://github.com/DEV1-Softworks/pey-php-sdk"
     },
     "authors": [
         {

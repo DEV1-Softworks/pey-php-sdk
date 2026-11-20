@@ -13,4 +13,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Actions CI on PHP 8.2–8.5, with a gitleaks secret scan.
 - `Version` class with the SDK user agent.
 
-[Unreleased]: https://github.com/DEV1-Softworks/pey-sdk/commits/develop
+[Unreleased]: https://github.com/DEV1-Softworks/pey-php-sdk/commits/develop
