@@ -50,6 +50,7 @@ use Dev1\Pey\Resources\PaymentLinks;
 use Dev1\Pey\Resources\Transactions;
 use Dev1\Pey\Security\BankAccountGuard;
 use Dev1\Pey\Security\Secret;
+use Dev1\Pey\Tests\Support\ClientFailures;
 use Dev1\Pey\Tests\Support\FailingIdempotencyStore;
 use Dev1\Pey\Tests\Support\FakePsr18Exceptions;
 use Dev1\Pey\Tests\Support\MockHttpClient;
@@ -324,7 +325,6 @@ final class IdempotentRequestsTest extends TestCase
         yield 'HTTP 409' => [$error(409, 'CONCURRENT_UPDATE'), ConflictException::class];
         yield 'HTTP 429' => [$error(429, 'UNKNOWN'), RateLimitedException::class];
         yield 'undocumented HTTP 405' => [new Response(405), UnexpectedResponseException::class];
-        yield 'request rejected by the HTTP client' => [FakePsr18Exceptions::request('Invalid URI', new Request('POST', '/')), NetworkException::class];
     }
 
     /**
@@ -358,6 +358,7 @@ final class IdempotentRequestsTest extends TestCase
         yield 'timeout' => [FakePsr18Exceptions::network('Operation timed out', new Request('POST', '/')), NetworkException::class];
         yield 'connection reset' => [FakePsr18Exceptions::network('Connection reset by peer', new Request('POST', '/')), NetworkException::class];
         yield 'generic client failure' => [FakePsr18Exceptions::generic('boom'), NetworkException::class];
+        yield 'request rejected by the HTTP client' => [FakePsr18Exceptions::request('Invalid URI', new Request('POST', '/')), NetworkException::class];
         yield 'HTTP 500' => [new Response(500), ServerException::class];
         yield 'HTTP 502' => [new Response(502), ServerException::class];
         yield 'HTTP 503' => [new Response(503, [], '{"error":{"message":"maintenance","type":"SERVICE_UNAVAILABLE","requestId":"r"}}'), ServiceUnavailableException::class];
@@ -394,6 +395,64 @@ final class IdempotentRequestsTest extends TestCase
 
         self::assertCount(1, $this->http->requests, 'A possibly created charge must never be sent again automatically.');
         self::assertCount(1, $this->logger->recordsAt('warning'));
+    }
+
+    /**
+     * Every HTTP client failure, for every charge-creating call: none of them
+     * proves that Pey did not act, so the same key must never send again.
+     *
+     * @return iterable<string, array{\Throwable, \Closure(IdempotentRequests): object, string}>
+     */
+    public static function provideClientFailuresOnEachCharge(): iterable
+    {
+        $charges = [
+            'createQr' => [
+                static fn(IdempotentRequests $idempotent): object => $idempotent->createQr('order-12345:qr', self::qr()),
+                self::QR_RESPONSE,
+            ],
+            'createPushNotification' => [
+                static fn(IdempotentRequests $idempotent): object => $idempotent->createPushNotification('order-12345:pn', new CreatePushNotificationRequest('150', '5512345678')),
+                '{"transactionId":"01M3QR5E7XHXMNZDEPFH3JAWS0","codiId":"12345678901234567890"}',
+            ],
+            'createPaymentLink' => [
+                static fn(IdempotentRequests $idempotent): object => $idempotent->createPaymentLink(new CreatePaymentLinkRequest('150', 'https://a.example', 'https://b.example', clientReferenceId: 'order-12345')),
+                '{"id":"01KRFJJYPMP24MF3EFX1043RNC","url":"https://app.mipey.mx/payment-link/01KRFJJYPMP24MF3EFX1043RNC"}',
+            ],
+        ];
+
+        foreach ($charges as $charge => [$call, $success]) {
+            foreach (ClientFailures::forRequest(new Request('POST', 'https://api.pey.mx/')) as $failure => $exception) {
+                yield $charge . ', ' . $failure => [$exception, $call, $success];
+            }
+        }
+    }
+
+    /**
+     * @param \Closure(IdempotentRequests): object $call
+     */
+    #[DataProvider('provideClientFailuresOnEachCharge')]
+    public function testAClientFailureNeverLetsTheSameKeySendTheChargeAgain(\Throwable $failure, \Closure $call, string $success): void
+    {
+        $this->http->willReturn($failure)->willRespond(201, $success);
+
+        $first = null;
+        try {
+            $call($this->idempotent);
+        } catch (NetworkException $e) {
+            $first = $e;
+        }
+
+        $second = null;
+        try {
+            $call($this->idempotent);
+        } catch (IdempotencyOutcomeUnknownException $e) {
+            $second = $e;
+        }
+
+        self::assertCount(1, $this->http->requests, 'A charge that may exist must never be sent again automatically.');
+        self::assertInstanceOf(IdempotencyOutcomeUnknownException::class, $second);
+        self::assertInstanceOf(NetworkException::class, $first);
+        self::assertTrue($first->requestMayHaveBeenProcessed());
     }
 
     public function testAReleasedUnknownKeyCanBeSentAgain(): void

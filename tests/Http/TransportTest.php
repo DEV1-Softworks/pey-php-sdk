@@ -26,6 +26,7 @@ use Dev1\Pey\Http\JsonNumber;
 use Dev1\Pey\Http\RetryPolicy;
 use Dev1\Pey\Http\Transport;
 use Dev1\Pey\Security\Secret;
+use Dev1\Pey\Tests\Support\ClientFailures;
 use Dev1\Pey\Tests\Support\Dumps;
 use Dev1\Pey\Tests\Support\FakePsr18Exceptions;
 use Dev1\Pey\Tests\Support\MockHttpClient;
@@ -356,7 +357,7 @@ final class TransportTest extends TestCase
         }
     }
 
-    public function testARequestTheClientRejectedBeforeSendingWasNotProcessed(): void
+    public function testAPostTheClientRejectedMayStillHaveBeenProcessed(): void
     {
         $this->client->willReturn(FakePsr18Exceptions::request('Invalid request', new Request('POST', 'https://api.pey.mx/codi/qr')));
 
@@ -364,9 +365,76 @@ final class TransportTest extends TestCase
             $this->transport->post('/codi/qr', ['amount' => new JsonNumber('1.00')]);
             self::fail('Expected a NetworkException.');
         } catch (NetworkException $e) {
+            self::assertTrue($e->requestMayHaveBeenProcessed(), 'PSR-18 cannot prove that a request was never sent.');
+            self::assertStringContainsString('Pey may have processed this request.', $e->getMessage());
+            self::assertFalse($e->isTransient(), 'The GET retry classification is unchanged.');
+        }
+    }
+
+    /**
+     * @return iterable<string, array{\Throwable}>
+     */
+    public static function provideClientFailuresOnAPost(): iterable
+    {
+        foreach (ClientFailures::forRequest(new Request('POST', 'https://api.pey.mx/codi/qr')) as $name => $failure) {
+            yield $name => [$failure];
+        }
+    }
+
+    #[DataProvider('provideClientFailuresOnAPost')]
+    public function testEveryClientFailureOnAPostMayHaveBeenProcessed(\Throwable $failure): void
+    {
+        $this->client->willReturn($failure);
+
+        try {
+            $this->transport->post('/codi/qr', ['amount' => new JsonNumber('1.00')]);
+            self::fail('Expected a NetworkException.');
+        } catch (NetworkException $e) {
+            self::assertTrue($e->requestMayHaveBeenProcessed());
+            self::assertStringContainsString('Pey may have processed this request.', $e->getMessage());
+            self::assertSame(get_debug_type($failure), $e->causeClass());
+        }
+
+        self::assertCount(1, $this->client->requests, 'A POST is never retried.');
+        self::assertTrue($this->logger->recordsAt('error')[0]['context']['request_may_have_been_processed'] ?? null);
+    }
+
+    /**
+     * @return iterable<string, array{\Throwable}>
+     */
+    public static function provideClientFailuresOnAGet(): iterable
+    {
+        foreach (ClientFailures::forRequest(new Request('GET', 'https://api.pey.mx/transaction/api-key')) as $name => $failure) {
+            yield $name => [$failure];
+        }
+    }
+
+    #[DataProvider('provideClientFailuresOnAGet')]
+    public function testNoClientFailureOnAGetIsFlaggedAsProcessed(\Throwable $failure): void
+    {
+        $this->client->willReturn($failure);
+
+        try {
+            $this->transport->get('/transaction/api-key');
+            self::fail('Expected a NetworkException.');
+        } catch (NetworkException $e) {
             self::assertFalse($e->requestMayHaveBeenProcessed());
             self::assertStringNotContainsString('may have processed', $e->getMessage());
         }
+    }
+
+    public function testTheClientFailureCasesMatchTheInstalledGuzzleMajor(): void
+    {
+        $cases = array_keys(ClientFailures::forRequest(new Request('POST', 'https://api.pey.mx/codi/qr')));
+        $guzzle8Cases = array_values(array_intersect($cases, ClientFailures::GUZZLE_8_ONLY));
+
+        self::assertContains('Guzzle RequestException', $cases);
+        self::assertContains('Guzzle ConnectException', $cases);
+        self::assertSame(
+            ClientFailures::guzzle8IsInstalled() ? ClientFailures::GUZZLE_8_ONLY : [],
+            $guzzle8Cases,
+            'Every Guzzle 8 exception must be exercised when Guzzle 8 is installed.',
+        );
     }
 
     public function testAGetNetworkFailureIsNotFlaggedAsProcessed(): void
