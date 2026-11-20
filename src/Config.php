@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Dev1\Pey;
 
 use Dev1\Pey\Exception\ConfigurationException;
+use Dev1\Pey\Http\RetryPolicy;
 use Dev1\Pey\Security\Secret;
 use Dev1\Pey\Validation\Clabe;
 
@@ -42,12 +43,15 @@ final readonly class Config
      */
     private array $allowedClabes;
 
+    private RetryPolicy $retryPolicy;
+
     /**
      * @param string|Secret $apiKey         the Pey API key; never logged or shown in errors
      * @param string        $baseUrl        HTTPS base URL. Override it only for a Pey environment other than production, if Pey releases one.
      * @param float         $connectTimeout seconds allowed to establish the connection
      * @param float         $timeout        seconds allowed for the whole request
      * @param list<string>  $allowedClabes  CLABEs this application may register with Pey. Empty (the default) blocks every registration.
+     * @param RetryPolicy   $retryPolicy    retries for GET requests only (default: 2 retries). POSTs are never retried.
      *
      * @throws ConfigurationException
      */
@@ -58,6 +62,7 @@ final readonly class Config
         float $connectTimeout = self::DEFAULT_CONNECT_TIMEOUT,
         float $timeout = self::DEFAULT_TIMEOUT,
         array $allowedClabes = [],
+        RetryPolicy $retryPolicy = new RetryPolicy(),
     ) {
         $this->apiKey = self::validateApiKey($apiKey);
         $this->baseUrl = self::normalizeBaseUrl($baseUrl);
@@ -71,6 +76,7 @@ final readonly class Config
         $this->connectTimeout = $connectTimeout;
         $this->timeout = $timeout;
         $this->allowedClabes = self::validateAllowedClabes($allowedClabes);
+        $this->retryPolicy = $retryPolicy;
     }
 
     public function apiKey(): Secret
@@ -102,6 +108,11 @@ final readonly class Config
     public function allowedClabes(): array
     {
         return $this->allowedClabes;
+    }
+
+    public function retryPolicy(): RetryPolicy
+    {
+        return $this->retryPolicy;
     }
 
     /**

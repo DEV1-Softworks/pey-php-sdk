@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(BankAccountNotAllowedException::class)]
 #[UsesClass(Clabe::class)]
 #[UsesClass(Config::class)]
+#[UsesClass(\Dev1\Pey\Http\RetryPolicy::class)]
 #[UsesClass(Secret::class)]
 #[UsesClass(ConfigurationException::class)]
 #[UsesClass(PeyException::class)]

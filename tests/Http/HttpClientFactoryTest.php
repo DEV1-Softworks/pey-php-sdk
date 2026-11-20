@@ -20,6 +20,7 @@ use Symfony\Component\HttpClient\Psr18Client as SymfonyPsr18Client;
 
 #[CoversClass(HttpClientFactory::class)]
 #[UsesClass(Config::class)]
+#[UsesClass(\Dev1\Pey\Http\RetryPolicy::class)]
 #[UsesClass(Secret::class)]
 #[UsesClass(PeyException::class)]
 #[UsesClass(ConfigurationException::class)]

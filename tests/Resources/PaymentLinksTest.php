@@ -49,6 +49,7 @@ use PHPUnit\Framework\TestCase;
 
 #[CoversClass(PaymentLinks::class)]
 #[UsesClass(Config::class)]
+#[UsesClass(\Dev1\Pey\Http\RetryPolicy::class)]
 #[UsesClass(Secret::class)]
 #[UsesClass(Transport::class)]
 #[UsesClass(Json::class)]

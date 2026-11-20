@@ -21,6 +21,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(ConfigurationException::class)]
 #[UsesClass(SecretExposureException::class)]
 #[UsesClass(\Dev1\Pey\Validation\Clabe::class)]
+#[UsesClass(\Dev1\Pey\Http\RetryPolicy::class)]
 final class ConfigTest extends TestCase
 {
     private const API_KEY = 'pey_test_not_a_real_value';
@@ -33,6 +34,12 @@ final class ConfigTest extends TestCase
         self::assertSame(5.0, $config->connectTimeout());
         self::assertSame(15.0, $config->timeout());
         self::assertSame(self::API_KEY, $config->apiKey()->reveal());
+    }
+
+    public function testGetRequestsAreRetriedTwiceByDefault(): void
+    {
+        self::assertSame(2, (new Config(self::API_KEY))->retryPolicy()->maxRetries);
+        self::assertSame(5, (new Config(self::API_KEY, retryPolicy: new \Dev1\Pey\Http\RetryPolicy(maxRetries: 5)))->retryPolicy()->maxRetries);
     }
 
     public function testNoClabeIsAllowlistedByDefault(): void
