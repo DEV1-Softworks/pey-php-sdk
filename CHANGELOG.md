@@ -45,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `$pey->codi()->createQr()` and `->createPushNotification()`: CoDi QR codes and push notifications. They are never retried automatically.
 - `$pey->bankAccounts()->register()` and `->get()`. Registration goes through `Security\BankAccountGuard`: only CLABEs listed in the new `Config::$allowedClabes` can be registered, and an empty list (the default) blocks every registration before anything is sent (`BankAccountNotAllowedException`, which shows a masked CLABE).
 - `Validation\Clabe::mask()`, which shows only the last 4 digits.
+- `$pey->paymentLinks()->create()`, `->update()` and `->get()`. Updates change only the amount and raise `ConflictException` (`isPaymentLinkNotPending()` / `isConcurrentUpdate()`) once a link is no longer pending.
 
 ### Fixed
 
