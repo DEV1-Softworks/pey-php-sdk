@@ -33,4 +33,14 @@ final readonly class QrCode
 
         return new self($payload->string('id'), $payload->string('qrString'), $payload->optionalString('qrImage'));
     }
+
+    /**
+     * The response fields, in the API's shape. `fromArray(toArray())` round-trips.
+     *
+     * @return array{id: string, qrString: string, qrImage: string|null}
+     */
+    public function toArray(): array
+    {
+        return ['id' => $this->id, 'qrString' => $this->qrString, 'qrImage' => $this->qrImage];
+    }
 }

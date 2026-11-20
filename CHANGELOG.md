@@ -58,6 +58,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - POST requests are never retried.
 - `Clock\SystemClock` (PSR-20, UTC) and the `psr/clock` dependency.
 - `NetworkException::isTransient()`.
+- Idempotency for charge-creating requests (`Idempotency\IdempotentRequests`): each key reaches Pey at most once.
+  - Applies to `createQr`, `createPushNotification` and `createPaymentLink` (whose key is its `clientReferenceId`).
+  - A repeat with the same parameters returns the stored result without calling Pey. Reusing a key for different parameters is refused.
+  - Keys are released only when Pey certainly did not act; any doubtful outcome stays blocked until it is reconciled and `release()` is called.
+  - Includes the `IdempotencyStore` contract and an `InMemoryIdempotencyStore` for tests.
+- `IdempotencyInProgressException`, `IdempotencyOutcomeUnknownException` and `IdempotencyKeyReusedException`.
+- `toArray()` on `QrCode`, `PushNotification` and `CreatedPaymentLink`.
 
 ### Fixed
 
