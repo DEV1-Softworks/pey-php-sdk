@@ -2,6 +2,8 @@
 
 Framework-agnostic PHP 8.2+ SDK for the Pey API (CoDi payments, Mexico). This is the core package. The Laravel bridge (`dev1/pey-laravel`) and Symfony bundle only wire things together and never re-implement logic, so every behavior belongs here. Never present the SDK as an official Pey or Banco de México product.
 
+User docs live in `docs/` (Markdown with front matter for labs.dev1.mx). `DocumentationTest` checks that their PHP examples parse and that their SDK imports exist. Update `docs/known-gaps.md` together with any `TODO(pey-docs)`.
+
 Detailed rules live in `.claude/rules/`: `php-style.md`, `testing.md`, `security.md` (full security rules) and `pey-api.md` (verified API facts and doc gaps). Machine-specific notes go in `CLAUDE.local.md` (gitignored).
 
 ## Commands
