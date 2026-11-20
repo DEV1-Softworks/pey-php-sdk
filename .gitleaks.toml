@@ -21,3 +21,10 @@ targetRules = ["generic-api-key"]
 condition = "AND"
 paths = ['''(?:^|/)tests/Fixtures/openapi\.json$''']
 regexes = ['''eyJQSyI6IC''']
+
+[[allowlists]]
+description = "Fake base64 pagination cursor (base64 of {\"a\":1}) in the Transactions cursor-encoding test. Not a credential."
+targetRules = ["generic-api-key"]
+condition = "AND"
+paths = ['''(?:^|/)tests/Resources/TransactionsTest\.php$''']
+regexes = ['''eyJhIjoxfQ''']

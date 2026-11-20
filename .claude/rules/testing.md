@@ -11,7 +11,8 @@
 
 - **No real HTTP calls, ever.** Use a mock PSR-18 client that records requests and returns canned responses. A test that opens a socket is a bug.
 - Never call `sleep()` or read the system clock in tests. Inject `Psr\Clock\ClockInterface` with a frozen clock, and inject the retry sleeper and jitter source so backoff is deterministic.
-- Never use a real API key or webhook secret. Use obviously fake values, for example `pey_test_fake_key` and the published Standard Webhooks test vectors. If gitleaks flags a fake fixture, allowlist that exact fixture path in `.gitleaks.toml`, never a whole directory of source code.
+- Never use a real API key or webhook secret. Use obviously fake values, for example `pey_test_not_a_real_value` and the published Standard Webhooks test vectors.
+- Keep fake tokens low-entropy (`cursor-2`, not base64). gitleaks' `generic-api-key` rule flags base64-looking values next to words like `token` or `key`. If a fake value is flagged anyway, add a `condition = "AND"` allowlist to `.gitleaks.toml` that matches that file **and** that value, never a whole directory.
 
 ## Contract tests
 
